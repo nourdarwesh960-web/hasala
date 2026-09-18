@@ -1,0 +1,327 @@
+﻿/* ══════════════════════════════════════════════════════════════
+   HASALA AUTH — PBKDF2 + Google Apps Script
+   ══════════════════════════════════════════════════════════════ */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpM-49gQfDXwKYkyms38rwOJhHLJrV39gC4STt-JRx9o_WhrEPWwYwBM3Cz8tMSkF9e/exec';
+const SESSION_KEY = 'hasala.auth.v1';
+const PBKDF2_ITERATIONS = 100000;
+// ══════════════════════════════════════════════════════════════
+// CRYPTO
+// ══════════════════════════════════════════════════════════════
+function bufToHex(buf) {
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+function generateSalt() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return bufToHex(arr);
+}
+async function hashPassword(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: enc.encode(salt),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    256
+  );
+  return bufToHex(bits);
+}
+// ══════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════
+async function callApi(payload) {
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return {
+        ok: false,
+        error: 'bad_response',
+        raw: text,
+      };
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'network',
+      message: e.message,
+    };
+  }
+}
+async function callGet(params) {
+  try {
+    const qs = Object.keys(params)
+      .map(
+        (k) =>
+          k +
+          '=' +
+          encodeURIComponent(params[k])
+      )
+      .join('&');
+    const res = await fetch(
+      SCRIPT_URL + '?' + qs
+    );
+    return await res.json();
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'network',
+      message: e.message,
+    };
+  }
+}
+// ══════════════════════════════════════════════════════════════
+// REGISTER
+// ══════════════════════════════════════════════════════════════
+export async function register({
+  email,
+  password,
+  name,
+  photo,
+}) {
+  if (!email || !password) {
+    return {
+      ok: false,
+      error: 'missing_fields',
+    };
+  }
+  if (password.length < 6) {
+    return {
+      ok: false,
+      error: 'weak_password',
+    };
+  }
+  const check = await callGet({
+    action: 'check_email',
+    email,
+  });
+  if (!check.ok) {
+    return {
+      ok: false,
+      error: 'network',
+    };
+  }
+  if (check.exists) {
+    return {
+      ok: false,
+      error: 'email_exists',
+    };
+  }
+  const salt = generateSalt();
+  const hash = await hashPassword(
+    password,
+    salt
+  );
+  const res = await callApi({
+    action: 'register',
+    email,
+    name: name || '',
+    salt,
+    hash,
+    photo: photo || '',
+  });
+  if (!res.ok) {
+    return res;
+  }
+  const session = {
+    userId: res.userId,
+    email,
+    name: name || '',
+    photo: photo || '',
+    loginAt: Date.now(),
+  };
+  saveSession(session);
+  return {
+    ok: true,
+    session,
+  };
+}
+// ══════════════════════════════════════════════════════════════
+// EMAIL LOGIN
+// ══════════════════════════════════════════════════════════════
+export async function login({
+  email,
+  password,
+}) {
+  if (!email || !password) {
+    return {
+      ok: false,
+      error: 'missing_fields',
+    };
+  }
+  const check = await callGet({
+    action: 'check_email',
+    email,
+  });
+  if (!check.ok) {
+    return {
+      ok: false,
+      error: 'network',
+    };
+  }
+  if (!check.exists) {
+    return {
+      ok: false,
+      error: 'user_not_found',
+    };
+  }
+  const hash = await hashPassword(
+    password,
+    check.salt
+  );
+  const res = await callApi({
+    action: 'login',
+    email,
+    hash,
+  });
+  if (!res.ok) {
+    return res;
+  }
+  const session = {
+    userId: res.user.id,
+    email: res.user.email,
+    name: res.user.name || '',
+    photo: res.user.photo || '',
+    loginAt: Date.now(),
+  };
+  saveSession(session);
+  return {
+    ok: true,
+    session,
+  };
+}
+// ══════════════════════════════════════════════════════════════
+// LOGOUT
+// ══════════════════════════════════════════════════════════════
+export function logout() {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch (e) {
+    // ignore
+  }
+}
+// ══════════════════════════════════════════════════════════════
+// SESSION
+// ══════════════════════════════════════════════════════════════
+export function saveSession(session) {
+  try {
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify(session)
+    );
+  } catch (e) {
+    // ignore
+  }
+}
+export function getSession() {
+  try {
+    const raw =
+      localStorage.getItem(SESSION_KEY);
+    if (!raw) {
+      return null;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+export function isLoggedIn() {
+  return !!getSession();
+}
+// ══════════════════════════════════════════════════════════════
+// UPDATE PROFILE
+// ══════════════════════════════════════════════════════════════
+export async function updateProfile({
+  userId,
+  name,
+  photo,
+}) {
+  const session = getSession();
+  if (!session) {
+    return {
+      ok: false,
+      error: 'not_logged_in',
+    };
+  }
+  const res = await callApi({
+    action: 'update_profile',
+    userId,
+    name,
+    photo,
+  });
+  if (!res.ok) {
+    return res;
+  }
+  const next = {
+    ...session,
+  };
+  if (name !== undefined) {
+    next.name = name;
+  }
+  if (photo !== undefined) {
+    next.photo = photo;
+  }
+  saveSession(next);
+  return {
+    ok: true,
+    session: next,
+  };
+}
+// ══════════════════════════════════════════════════════════════
+// LOG USAGE
+// ══════════════════════════════════════════════════════════════
+export async function logUsage({
+  event,
+  page,
+  device,
+  lang,
+  meta,
+}) {
+  const session = getSession();
+  return callApi({
+    action: 'log_usage',
+    userId: session?.userId || 'anon',
+    event,
+    page,
+    device,
+    lang,
+    meta,
+  });
+}
+// ══════════════════════════════════════════════════════════════
+// LOG CHAT
+// ══════════════════════════════════════════════════════════════
+export async function logChat({
+  role,
+  message,
+  context,
+}) {
+  const session = getSession();
+  return callApi({
+    action: 'log_chat',
+    userId: session?.userId || 'anon',
+    role,
+    message,
+    context: context || '',
+  });
+}

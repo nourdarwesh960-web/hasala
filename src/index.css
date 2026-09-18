@@ -1,0 +1,1264 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+  --bg: #F5F5F3;
+  --surface: #FFFFFF;
+  --surface-2: #F0F0EE;
+  --line: #E4E4E0;
+  --ink: #0D0D0E;
+  --muted: #737373;
+  --accent: #0E9F6E;
+  --accent-soft: #E7F6EF;
+  --danger: #DC2626;
+  --danger-soft: #FEF0F0;
+  --warn: #B45309;
+  --warn-soft: #FEF6E7;
+  --info: #2563EB;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px -12px rgba(0,0,0,.10);
+}
+.dark {
+  --bg: #08080A;
+  --surface: #121215;
+  --surface-2: #1A1A1F;
+  --line: #26262C;
+  --ink: #F4F4F5;
+  --muted: #8B8B94;
+  --accent: #2ED596;
+  --accent-soft: #0D2A20;
+  --danger: #F87171;
+  --danger-soft: #2A1414;
+  --warn: #FBBF24;
+  --warn-soft: #2A2110;
+  --info: #60A5FA;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+* { -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+html[dir="rtl"] body { font-family: 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+.no-sb::-webkit-scrollbar { display: none; }
+.no-sb { scrollbar-width: none; }
+@keyframes sheetIn { from { transform: translateY(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes riseIn { from { transform: translateY(10px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes scaleIn { from { transform: scale(.96); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes pop { 0% { transform: scale(.8) } 60% { transform: scale(1.06) } 100% { transform: scale(1) } }
+.anim-sheet { animation: sheetIn .26s cubic-bezier(.22,1,.36,1); }
+.anim-fade { animation: fadeIn .18s ease both; }
+.anim-rise { animation: riseIn .34s cubic-bezier(.22,1,.36,1) both; }
+.anim-scale { animation: scaleIn .2s cubic-bezier(.22,1,.36,1) both; }
+.anim-pop { animation: pop .3s cubic-bezier(.22,1,.36,1) both; }
+input, select, textarea, button { font-family: inherit; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+input:focus, select:focus, textarea:focus, button:focus { outline: none; }
+.field { background: var(--surface-2); border: 1px solid transparent; transition: border-color .15s, background .15s; }
+.field:focus-within { border-color: var(--accent); background: var(--surface); }
+.press { transition: transform .1s ease, opacity .15s ease; }
+.press:active { transform: scale(.97); }
+.card { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+html[dir="rtl"] .flip { transform: scaleX(-1); }/* ══════════════════════════════════════════
+   3D EFFECTS
+   ══════════════════════════════════════════ */
+.tilt-3d {
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease;
+  will-change: transform;
+}
+.tilt-3d:hover {
+  transform: perspective(1000px) rotateX(-2.5deg) rotateY(2.5deg) translateZ(6px) scale(1.01);
+  box-shadow: 0 24px 60px -22px rgba(0,0,0,.35), 0 10px 30px -18px rgba(0,0,0,.25);
+}
+html[dir="rtl"] .tilt-3d:hover {
+  transform: perspective(1000px) rotateX(-2.5deg) rotateY(-2.5deg) translateZ(6px) scale(1.01);
+}
+.hero-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.22,1,.36,1);
+}
+.hero-3d::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%);
+  background-size: 250% 100%;
+  opacity: 0;
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+.hero-3d:hover::after {
+  opacity: 1;
+  animation: shineSweep 1.6s ease forwards;
+}
+@keyframes shineSweep {
+  from { background-position: 200% 0; }
+  to { background-position: -100% 0; }
+}
+@keyframes float3d {
+  0%, 100% { transform: translateY(0) rotateZ(0deg); }
+  50% { transform: translateY(-5px) rotateZ(-3deg); }
+}
+.float-3d {
+  animation: float3d 4s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+@keyframes floatCoin {
+  0%   { transform: translateY(0) rotateY(0deg); }
+  50%  { transform: translateY(-8px) rotateY(180deg); }
+  100% { transform: translateY(0) rotateY(360deg); }
+}
+.float-coin {
+  display: inline-block;
+  animation: floatCoin 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+@keyframes pulse3d {
+  0%, 100% { transform: perspective(600px) translateZ(0); }
+  50%      { transform: perspective(600px) translateZ(12px); }
+}
+.pulse-3d {
+  animation: pulse3d 3s ease-in-out infinite;
+}
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.shine-sweep::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.16), transparent);
+  transform: skewX(-20deg);
+  transition: inset-inline-start .8s ease;
+  pointer-events: none;
+}
+.shine-sweep:hover::before {
+  inset-inline-start: 150%;
+}
+@keyframes spinY {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+.spin-y {
+  animation: spinY 8s linear infinite;
+  transform-style: preserve-3d;
+  display: inline-block;
+}/* ══════════════════════════════════════════
+   LANDING PAGE ANIMATIONS
+   ══════════════════════════════════════════ */
+@keyframes landingFloat1 {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-30px) rotate(5deg); }
+}
+@keyframes landingFloat2 {
+  0%, 100% { transform: translateY(-15px) rotate(10deg); }
+  50% { transform: translateY(15px) rotate(-10deg); }
+}
+@keyframes landingFloat3 {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+  50% { transform: translateY(-25px) scale(1.08) rotate(8deg); }
+}
+@keyframes landingPiggy {
+  0%, 100% { transform: translateY(0) rotateZ(0deg) scale(1); }
+  50% { transform: translateY(-18px) rotateZ(-4deg) scale(1.04); }
+}
+.landing-piggy {
+  animation: landingPiggy 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 25px 50px rgba(14,159,110,.35));
+}
+.landing-coin-1 { animation: landingFloat1 5s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
+.landing-coin-2 { animation: landingFloat2 6s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
+.landing-coin-3 { animation: landingFloat3 4.5s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
+.landing-coin-4 { animation: landingFloat1 5.5s .5s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
+.landing-coin-5 { animation: landingFloat2 7s .3s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
+.landing-coin-6 { animation: landingFloat3 6.5s .7s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
+@media (prefers-reduced-motion: reduce) {
+  .landing-piggy, .landing-coin-1, .landing-coin-2, .landing-coin-3,
+  .landing-coin-4, .landing-coin-5, .landing-coin-6, .float-3d, .float-coin {
+    animation: none !important;
+  }
+}/* ══════════════════════════════════════════
+   BURGER MENU
+   ══════════════════════════════════════════ */
+.burger-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all .25s ease;
+  z-index: 100;
+  flex-shrink: 0;
+}
+.burger-btn:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.burger-btn .bar {
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 50%;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+  transform-origin: center;
+  transition: transform .35s cubic-bezier(.22,1,.36,1), opacity .2s ease, top .3s ease;
+}
+.burger-btn .bar-1 { top: calc(50% - 6px); }
+.burger-btn .bar-2 { top: calc(50% + 0px); }
+.burger-btn .bar-3 { top: calc(50% + 6px); }
+.burger-btn.open { background: var(--accent); border-color: var(--accent); }
+.burger-btn.open .bar { background: #fff; }
+.burger-btn.open .bar-1 { top: 50%; transform: translateX(-50%) rotate(45deg); }
+html[dir="ltr"] .burger-btn.open .bar-1 { transform: translateX(-50%) rotate(45deg); }
+.burger-btn.open .bar-2 { opacity: 0; transform: translateX(-50%) scaleX(0); }
+.burger-btn.open .bar-3 { top: 50%; transform: translateX(-50%) rotate(-45deg); }
+html[dir="rtl"] .burger-btn .bar { transform: translateX(-50%); }
+html[dir="rtl"] .burger-btn.open .bar-1 { transform: translateX(-50%) rotate(-45deg); }
+html[dir="rtl"] .burger-btn.open .bar-3 { transform: translateX(-50%) rotate(45deg); }
+.burger-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(0px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease, backdrop-filter .4s ease;
+  z-index: 90;
+}
+.burger-overlay.open {
+  opacity: 1;
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+.burger-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 24px 40px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .3s ease, visibility 0s linear .3s;
+}
+.burger-panel.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity .3s ease, visibility 0s linear 0s;
+}
+.burger-menu-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  max-width: 420px;
+}
+.burger-menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 16px;
+  transition: color .3s ease, background .2s ease;
+  opacity: 0;
+  transform: translateY(24px);
+  text-align: start;
+  width: 100%;
+}
+html[dir="rtl"] .burger-menu-item { text-align: right; }
+.burger-panel.open .burger-menu-item {
+  animation: burgerItemIn .5s cubic-bezier(.22,1,.36,1) forwards;
+}
+.burger-menu-item:hover {
+  background: rgba(255,255,255,.04);
+}
+.burger-menu-item .num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .08em;
+  min-width: 24px;
+}
+.burger-menu-item .label {
+  flex: 1;
+  position: relative;
+}
+.burger-menu-item .label::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: var(--menu-origin, 0%) 50%;
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
+}
+html[dir="rtl"] .burger-menu-item .label::after { --menu-origin: 100%; }
+.burger-menu-item:hover .label::after,
+.burger-menu-item.active .label::after {
+  transform: scaleX(1);
+}
+.burger-menu-item .ico {
+  color: var(--muted);
+  transition: color .3s ease, transform .3s ease;
+  flex-shrink: 0;
+}
+.burger-menu-item:hover .ico,
+.burger-menu-item.active .ico {
+  color: var(--accent);
+  transform: scale(1.1);
+}
+.burger-menu-item.active .label {
+  color: var(--accent);
+}
+.burger-menu:hover .burger-menu-item:not(:hover) {
+  opacity: .35;
+}
+.burger-header {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 96;
+}
+.burger-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.burger-header .brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.burger-header .brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.burger-header .brand-tag {
+  font-size: 10px;
+  color: var(--muted);
+}
+.burger-header .lang-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.burger-header .lang-btn:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+.burger-footer {
+  position: absolute;
+  bottom: 24px;
+  inset-inline: 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity .4s ease .4s;
+}
+.burger-panel.open .burger-footer { opacity: 1; }
+@keyframes burgerItemIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .burger-menu-item { animation: none !important; opacity: 1; transform: none; }
+  .burger-overlay { transition: none !important; }
+}/* ══════════════════════════════════════════
+   BURGER POSITION — Desktop offset (بعد الـ sidebar)
+   ══════════════════════════════════════════ */
+:root {
+  --burger-start: 12px;
+}
+@media (min-width: 1024px) {
+  :root {
+    --burger-start: 272px;
+  }
+}/* Burger in all devices at 12px */
+@media (min-width: 1024px) {
+  :root {
+    --burger-start: 12px !important;
+  }
+}/* ══════════════════════════════════════════════════════════════
+   AURA GRADIENT — Witch's Brew (background layers)
+   ══════════════════════════════════════════════════════════════ */
+.aura-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.aura-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateZ(0);
+  will-change: transform;
+}
+/* Only visible in dark mode (الوضع الافتراضي) */
+.aura-layer-1 {
+  background: radial-gradient(ellipse 42% 48% at 35% 40%, rgba(14, 159, 110, 0.55) 0%, transparent 65%);
+  mix-blend-mode: screen;
+  filter: blur(120px);
+}
+.aura-layer-2 {
+  background: radial-gradient(ellipse 38% 42% at 70% 50%, rgba(124, 58, 237, 0.4) 0%, transparent 60%);
+  mix-blend-mode: screen;
+  filter: blur(110px);
+}
+.aura-layer-3 {
+  background: radial-gradient(ellipse 28% 32% at 55% 75%, rgba(46, 213, 150, 0.35) 0%, transparent 55%);
+  mix-blend-mode: screen;
+  filter: blur(100px);
+}
+.aura-layer-4 {
+  background: radial-gradient(ellipse 18% 20% at 20% 25%, rgba(190, 242, 100, 0.25) 0%, transparent 50%);
+  mix-blend-mode: screen;
+  filter: blur(70px);
+}
+@media (min-width: 1024px) {
+  .aura-layer-1 { filter: blur(180px); }
+  .aura-layer-2 { filter: blur(160px); }
+  .aura-layer-3 { filter: blur(140px); }
+  .aura-layer-4 { filter: blur(100px); }
+}
+/* In light mode, use multiply or hide */
+:root:not(.dark) .aura-layer {
+  opacity: 0.15;
+  mix-blend-mode: multiply;
+}
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .aura-layer { animation: none !important; }
+}/* ══════════════════════════════════════════════════════════════
+   Base color on body — blend modes composite against this
+   ══════════════════════════════════════════════════════════════ */
+body {
+  background-color: #08080A;
+}
+.dark body {
+  background-color: #08080A;
+}
+:root:not(.dark) body {
+  background-color: #F5F5F3;
+}/* ══════════════════════════════════════════════════════════════
+   GLASSMORPHISM OVERRIDE
+   كل الأسطح زجاج شفاف — بتبان من ورا الـ aura
+   ══════════════════════════════════════════════════════════════ */
+/* Root variables — glass mode */
+.dark {
+  --bg: transparent;
+  --surface: rgba(22, 22, 26, 0.55);
+  --surface-2: rgba(32, 32, 38, 0.55);
+  --line: rgba(255, 255, 255, 0.08);
+}
+:root:not(.dark) {
+  --bg: transparent;
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-2: rgba(255, 255, 255, 0.4);
+  --line: rgba(0, 0, 0, 0.06);
+}
+/* Card — frosted glass */
+.card {
+  background: var(--surface) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--line) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px -12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+.dark .card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 12px 40px -16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+/* Sidebar — glass */
+aside.bg-surface {
+  background: rgba(18, 18, 21, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+:root:not(.dark) aside.bg-surface {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+/* TopBar — glass */
+header.sticky {
+  background: rgba(8, 8, 10, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+:root:not(.dark) header.sticky {
+  background: rgba(255, 255, 255, 0.55) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+/* Bottom nav — glass */
+nav.fixed.bottom-0 {
+  background: rgba(18, 18, 21, 0.75) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+:root:not(.dark) nav.fixed.bottom-0 {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+/* Modals — glass */
+.fixed.inset-0 > .bg-surface.border-line.rounded-3xl,
+.fixed.inset-0 > div > .bg-surface.border-line.rounded-3xl {
+  background: rgba(20, 20, 24, 0.75) !important;
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+:root:not(.dark) .fixed.inset-0 > .bg-surface.border-line.rounded-3xl,
+:root:not(.dark) .fixed.inset-0 > div > .bg-surface.border-line.rounded-3xl {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+/* Field / inputs — glass */
+.field {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+:root:not(.dark) .field {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+.field:focus-within {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--accent) !important;
+}
+:root:not(.dark) .field:focus-within {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+/* Command center modal */
+.bg-surface.border-line.rounded-3xl {
+  backdrop-filter: blur(32px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
+}
+/* Chat panel */
+.bg-surface.border-line.rounded-3xl.shadow-2xl {
+  background: rgba(20, 20, 24, 0.85) !important;
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+:root:not(.dark) .bg-surface.border-line.rounded-3xl.shadow-2xl {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+/* Notifications panel */
+.bg-surface.border-line.rounded-2xl.shadow-xl {
+  background: rgba(20, 20, 24, 0.8) !important;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+/* More sheet on mobile */
+.bg-surface.rounded-t-3xl {
+  background: rgba(20, 20, 24, 0.85) !important;
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+/* Table rows / lists in cards */
+.divide-y > div {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+:root:not(.dark) .divide-y > div {
+  border-color: rgba(0, 0, 0, 0.04) !important;
+}
+/* ══════════════════════════════════════════════════════════════
+   Enhance aura visibility — the layers are visible through glass
+   ══════════════════════════════════════════════════════════════ */
+.aura-layer-1 { opacity: 0.9; }
+.aura-layer-2 { opacity: 0.8; }
+.aura-layer-3 { opacity: 0.7; }
+.aura-layer-4 { opacity: 0.6; }
+/* Firefox fallback */
+@supports not (backdrop-filter: blur(10px)) {
+  .card, header.sticky, aside.bg-surface, nav.fixed.bottom-0 {
+    background: rgba(20, 20, 24, 0.95) !important;
+  }
+  :root:not(.dark) .card,
+  :root:not(.dark) header.sticky,
+  :root:not(.dark) aside.bg-surface,
+  :root:not(.dark) nav.fixed.bottom-0 {
+    background: rgba(255, 255, 255, 0.95) !important;
+  }
+}/* ══════════════════════════════════════════════════════════════
+   MOBILE UX POLISH — كل حاجة تليق على التليفون
+   ══════════════════════════════════════════════════════════════ */
+/* ─── 1. Viewport & safe areas (iPhone notch, dynamic island) ─── */
+html, body {
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  /* مساحة أسفل الشاشة في iPhone */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+/* ─── 2. iOS input zoom prevention ─── */
+/* iOS بيعمل zoom لو الـ font-size أقل من 16px */
+@media (max-width: 767px) {
+  input, select, textarea, button {
+    font-size: 16px !important;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    font-size: 16px !important;
+  }
+}
+/* ─── 3. Touch interactions ─── */
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  min-height: 40px;
+  min-width: 40px;
+}
+/* Larger touch targets on mobile */
+@media (max-width: 767px) {
+  .press {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+/* ─── 4. Momentum scrolling ─── */
+.overflow-y-auto,
+.no-sb {
+  -webkit-overflow-scrolling: touch;
+}
+/* ─── 5. Bottom nav position fixed with safe area ─── */
+@media (max-width: 1023px) {
+  nav.fixed.bottom-0 {
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    height: calc(62px + env(safe-area-inset-bottom, 0));
+  }
+  /* Bottom nav buttons - bigger touch targets */
+  nav.fixed.bottom-0 button {
+    min-height: 56px;
+    padding: 6px 4px;
+  }
+  /* Main content: leave space for bottom nav */
+  main {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)) !important;
+  }
+}
+/* ─── 6. FAB (floating action button) mobile position ─── */
+@media (max-width: 1023px) {
+  .fab-mobile,
+  button[class*="-top-6"][class*="w-14"] {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0)) !important;
+  }
+}
+/* ─── 7. Modal / bottom sheet on mobile ─── */
+@media (max-width: 767px) {
+  /* Modal full height on mobile when large */
+  .fixed.inset-0.z-\[100\] {
+    align-items: flex-end;
+  }
+  .fixed.inset-0.z-\[100\] > div:last-child {
+    max-height: calc(100vh - env(safe-area-inset-top, 0) - 24px) !important;
+    border-radius: 28px 28px 0 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  /* Modal input fields bigger */
+  .fixed.inset-0.z-\[100\] input,
+  .fixed.inset-0.z-\[100\] select,
+  .fixed.inset-0.z-\[100\] textarea {
+    font-size: 16px !important;
+    min-height: 48px;
+  }
+}
+/* ─── 8. Cards & spacing on mobile ─── */
+@media (max-width: 640px) {
+  .card {
+    border-radius: 20px !important;
+  }
+  /* أقل padding على الموبايل */
+  .p-5 { padding: 16px !important; }
+  .p-6 { padding: 18px !important; }
+  .p-8 { padding: 22px !important; }
+  /* Header text أصغر */
+  h1.text-\[22px\] { font-size: 20px !important; }
+  /* Numbers أصغر شوية عشان ما يطلعوش برا الكارت */
+  .text-\[34px\], .text-\[42px\] {
+    font-size: 28px !important;
+  }
+  .text-\[26px\] { font-size: 22px !important; }
+  .text-\[22px\] { font-size: 19px !important; }
+}
+/* ─── 9. Grid stacks on mobile ─── */
+@media (max-width: 767px) {
+  /* تحويل grid 3 أعمدة لعمود واحد على الموبايل */
+  .grid.grid-cols-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  /* 2 أعمدة تفضل 2 على الموبايل (أحجام صغيرة) */
+  .grid.grid-cols-2 {
+    gap: 10px;
+  }
+}
+/* ─── 10. Overflow handling for long text ─── */
+.num, .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* ─── 11. Charts responsive on mobile ─── */
+@media (max-width: 640px) {
+  svg[class*="rotate-90"] {
+    max-width: 160px !important;
+    max-height: 160px !important;
+    height: auto !important;
+    width: auto !important;
+  }
+}
+/* ─── 12. TopBar mobile ─── */
+@media (max-width: 640px) {
+  header.sticky .max-w-\[1180px\] {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    gap: 8px !important;
+  }
+  /* صغير الـ greeting on very small screens */
+  header.sticky .text-\[13px\] {
+    font-size: 12.5px;
+  }
+}
+/* ─── 13. Bottom nav active indicator ─── */
+@media (max-width: 1023px) {
+  nav.fixed.bottom-0 button {
+    position: relative;
+  }
+  nav.fixed.bottom-0 button::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width .25s ease;
+  }
+  nav.fixed.bottom-0 button.text-accent::before {
+    width: 24px;
+  }
+}
+/* ─── 14. Chat widget mobile ─── */
+@media (max-width: 767px) {
+  .fixed.z-50.bottom-40,
+  .fixed.z-50.bottom-24 {
+    /* Full width on mobile */
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0)) !important;
+    width: auto !important;
+    max-width: none !important;
+    height: 70vh !important;
+    max-height: 600px !important;
+  }
+}
+/* ─── 15. Better pull-to-refresh prevention ─── */
+html {
+  overscroll-behavior: none;
+}
+/* ─── 16. Font sizes — readable on mobile ─── */
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  /* Sub-text readable */
+  .text-\[10px\], .text-\[10.5px\] { font-size: 11px !important; }
+  .text-\[11px\], .text-\[11.5px\] { font-size: 12px !important; }
+  .text-\[12px\], .text-\[12.5px\] { font-size: 13px !important; }
+}
+/* ─── 17. Landscape mode adjustments ─── */
+@media (max-height: 500px) and (orientation: landscape) {
+  nav.fixed.bottom-0 {
+    height: 52px;
+  }
+  main {
+    padding-bottom: 60px !important;
+  }
+}
+/* ─── 18. Better focus for touch ─── */
+@media (hover: none) {
+  /* Disable hover effects on touch devices */
+  .tilt-3d:hover {
+    transform: none !important;
+    box-shadow: var(--shadow) !important;
+  }
+  .shine-sweep:hover::before {
+    inset-inline-start: -150% !important;
+  }
+  /* Tap feedback instead */
+  .press:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+}
+/* ─── 19. Prevent horizontal scroll ─── */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+#root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+/* ─── 20. Better tap highlight for cards ─── */
+.card:active {
+  background: var(--surface-2);
+}
+/* ─── 21. Command center on mobile ─── */
+@media (max-width: 640px) {
+  .fixed.z-\[150\] {
+    padding-top: 12px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .fixed.z-\[150\] > div:last-child {
+    max-height: 85vh !important;
+  }
+  .fixed.z-\[150\] .rounded-3xl {
+    border-radius: 24px !important;
+  }
+}
+/* ─── 22. Notification panel mobile ─── */
+@media (max-width: 640px) {
+  .fixed.z-\[95\] > div:last-child {
+    left: 8px !important;
+    right: 8px !important;
+    top: 60px !important;
+    width: auto !important;
+  }
+}/* ══════════════════════════════════════════════════════════════
+   TOAST FIX — يبان في كل الأوضاع
+   ══════════════════════════════════════════════════════════════ */
+/* الإشعار الأساسي — glass قوي */
+.toast-fix {
+  background: rgba(30, 30, 36, 0.92) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 12px 32px -8px rgba(0, 0, 0, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+/* في الوضع الفاتح */
+:root:not(.dark) .toast-fix {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #0D0D0E !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 12px 32px -8px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+/* ألوان الحالة — good (أخضر) */
+.toast-fix.bg-accent {
+  background: linear-gradient(135deg, #0E9F6E 0%, #059669 100%) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px -8px rgba(14, 159, 110, 0.55), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+/* ألوان الحالة — bad (أحمر) */
+.toast-fix.bg-danger {
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px -8px rgba(220, 38, 38, 0.55), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+/* Toast على الموبايل — فوق الـ bottom nav */
+@media (max-width: 1023px) {
+  .toast-fix-container {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0)) !important;
+    left: 16px !important;
+    right: 16px !important;
+    transform: none !important;
+    max-width: none !important;
+  }
+  .toast-fix {
+    width: 100%;
+    text-align: center;
+    padding: 14px 20px !important;
+    font-size: 14px !important;
+  }
+}
+/* ══════════════════════════════════════════════════════════════
+   ARABIC RTL FIX ON MOBILE
+   ══════════════════════════════════════════════════════════════ */
+/* الخط العربي الأساسي */
+html[dir="rtl"] body {
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', 'Cairo', system-ui, sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  text-rendering: optimizeLegibility;
+}
+/* الأرقام في السياق العربي تفضل LTR */
+html[dir="rtl"] .num {
+  direction: ltr;
+  unicode-bidi: embed;
+  display: inline-block;
+}
+/* الأرقام الواقفة لوحدها */
+html[dir="rtl"] .text-\[34px\],
+html[dir="rtl"] .text-\[42px\],
+html[dir="rtl"] .text-\[26px\],
+html[dir="rtl"] .text-\[22px\],
+html[dir="rtl"] .text-\[20px\],
+html[dir="rtl"] .text-\[19px\],
+html[dir="rtl"] .text-\[18px\],
+html[dir="rtl"] .text-\[17px\] {
+  direction: ltr;
+  unicode-bidi: embed;
+  text-align: right;
+}
+/* في RTL — الأرقام اللي على الشمال */
+html[dir="rtl"] .num.text-end,
+html[dir="rtl"] .text-end .num {
+  direction: ltr;
+  unicode-bidi: embed;
+}
+/* Fix Arabic line-height on mobile */
+@media (max-width: 767px) {
+  html[dir="rtl"] body {
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] h3 {
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+  }
+  /* الأرقام النصية */
+  html[dir="rtl"] input[type="date"],
+  html[dir="rtl"] input[type="number"],
+  html[dir="rtl"] input[inputmode="decimal"],
+  html[dir="rtl"] input[inputmode="numeric"] {
+    direction: ltr;
+    text-align: right;
+  }
+  /* placeholder بالعربي يفضل صح */
+  html[dir="rtl"] input::placeholder,
+  html[dir="rtl"] textarea::placeholder {
+    direction: rtl;
+    text-align: right;
+  }
+  /* الأرقام في حقول كاملة */
+  html[dir="rtl"] .field input {
+    text-align: right;
+  }
+}
+/* الرموز المختلطة (عربي + إنجليزي) */
+html[dir="rtl"] .num,
+html[dir="rtl"] .money {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+/* إصلاح الكلمات الملزوقة في الـ Card */
+html[dir="rtl"] .flex {
+  --spacing-safe: 0;
+}
+/* الـ Lists في RTL */
+html[dir="rtl"] ul,
+html[dir="rtl"] ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+/* أيقونات الأسهم في RTL */
+html[dir="rtl"] .flip {
+  transform: scaleX(-1);
+}
+/* أزرار مع أيقونة + نص في RTL */
+html[dir="rtl"] button svg.flip {
+  transform: scaleX(-1);
+}
+/* ══════════════════════════════════════════════════════════════
+   Chat widget بالعربي
+   ══════════════════════════════════════════════════════════════ */
+html[dir="rtl"] .whitespace-pre-line {
+  line-height: 1.7;
+}
+/* تصحيح الرسائل العربية في الشات */
+html[dir="rtl"] .rounded-2xl {
+  direction: rtl;
+}
+/* ══════════════════════════════════════════════════════════════
+   Fix numbers in mixed Arabic content
+   ══════════════════════════════════════════════════════════════ */
+.num-auto {
+  unicode-bidi: plaintext;
+}
+/* Text with both Arabic + numbers */
+html[dir="rtl"] .mixed {
+  unicode-bidi: plaintext;
+  direction: rtl;
+}
+/* ══════════════════════════════════════════════════════════════
+   Mobile-specific Arabic improvements
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* أقل letter-spacing للعربي عشان يبان طبيعي */
+  html[dir="rtl"] * {
+    letter-spacing: -0.005em;
+  }
+  /* Header */
+  html[dir="rtl"] header.sticky {
+    direction: rtl;
+  }
+  /* The greeting */
+  html[dir="rtl"] header .font-bold {
+    letter-spacing: -0.01em;
+  }
+  /* Toast */
+  html[dir="rtl"] .toast-fix {
+    direction: rtl;
+  }
+}/* ══════════════════════════════════════════════════════════════
+   FIX TEXT OVERFLOW — النصوص ما تخرجش برا الإطار
+   ══════════════════════════════════════════════════════════════ */
+/* كل عنصر في التطبيق */
+* {
+  min-width: 0;
+}
+/* الـ flex containers */
+.flex, .grid {
+  min-width: 0;
+}
+/* النصوص والكروت */
+.card, .rounded-xl, .rounded-2xl, .rounded-3xl {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+/* الأرقام والمبالغ */
+.num, .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* الأزرار مع نص طويل */
+button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* الـ inputs */
+input, select, textarea {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+/* الـ modals */
+.fixed.inset-0 .bg-surface {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+/* الـ Icon inside badges */
+.icon-badge {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+/* Mobile specific */
+@media (max-width: 640px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .text-\[15px\] { font-size: 14px !important; }
+  .text-\[16px\] { font-size: 15px !important; }
+  .text-\[17px\] { font-size: 15.5px !important; }
+  .text-\[18px\] { font-size: 16px !important; }
+  .text-\[19px\] { font-size: 17px !important; }
+  .text-\[20px\] { font-size: 17.5px !important; }
+  .text-\[22px\] { font-size: 18px !important; }
+  .text-\[26px\] { font-size: 20px !important; }
+  .text-\[34px\] { font-size: 26px !important; }
+  .text-\[42px\] { font-size: 30px !important; }
+}
+/* Chat - text length */
+.whitespace-pre-line {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+/* Prevent Arabic text from breaking on single chars */
+html[dir="rtl"] p, html[dir="rtl"] span, html[dir="rtl"] div {
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+/* Chat messages - don't overflow */
+.fixed.z-50 .max-w-\[82\%\] {
+  min-width: 0;
+  max-width: 82%;
+  word-break: break-word;
+}/* ══════════════════════════════════════════════════════════════
+   SELECT / DROPDOWN STYLING — أخضر غامق + نص أبيض
+   ══════════════════════════════════════════════════════════════ */
+/* الـ select نفسه */
+select {
+  background-color: #0d2a20 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(46, 213, 150, 0.3) !important;
+}
+/* الـ options جوه القائمة */
+select option {
+  background-color: #0d2a20 !important;
+  color: #ffffff !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+}
+/* الـ option المختار */
+select option:checked,
+select option:checked:hover {
+  background: linear-gradient(0deg, #1a4d38 0%, #1a4d38 100%) !important;
+  background-color: #1a4d38 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+/* الـ option على hover */
+select option:hover {
+  background-color: #1a4d38 !important;
+  color: #ffffff !important;
+}
+/* Firefox — الـ dropdown بيحتاج --color على الـ select */
+@-moz-document url-prefix() {
+  select {
+    background-color: #0d2a20 !important;
+    color: #ffffff !important;
+  }
+  select option {
+    background-color: #0d2a20 !important;
+    color: #ffffff !important;
+  }
+}
+/* في الوضع الفاتح — نستخدم نفس الأخضر الغامق للاتساق */
+:root:not(.dark) select,
+:root:not(.dark) select option {
+  background-color: #0d2a20 !important;
+  color: #ffffff !important;
+  border-color: rgba(46, 213, 150, 0.3) !important;
+}
+/* السهم بتاع الـ select يبان أبيض */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  padding-right: 2.25rem !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+/* في RTL — السهم على اليسار */
+html[dir="rtl"] select {
+  background-position: left 12px center !important;
+  padding-right: 12px !important;
+  padding-left: 2.25rem !important;
+}
+/* Mobile — نفس الشكل */
+@media (max-width: 767px) {
+  select {
+    font-size: 16px !important;
+    padding: 12px 14px !important;
+    padding-right: 2.5rem !important;
+  }
+  html[dir="rtl"] select {
+    padding-right: 14px !important;
+    padding-left: 2.5rem !important;
+  }
+  select option {
+    font-size: 16px !important;
+    padding: 14px !important;
+  }
+}
+/* الـ select على focus */
+select:focus {
+  background-color: #0d2a20 !important;
+  border-color: #2ED596 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(46, 213, 150, 0.15) !important;
+}
+/* الـ select disabled */
+select:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+/* ══════════════════════════════════════════════════════════════
+   NATIVE DROPDOWN (Chrome/Edge on Windows)
+   ══════════════════════════════════════════════════════════════ */
+select::-ms-expand {
+  display: none;
+}

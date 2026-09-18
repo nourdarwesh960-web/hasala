@@ -1,0 +1,187 @@
+import { useState, useEffect, useRef } from 'react';
+import { useApp } from '../context/AppContext';
+import { Card, Btn, Field, Input } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { CURRENCIES } from '../lib/constants';
+import { demoState, blankState } from '../lib/demo';
+import { todayISO, csvEscape, download, resizeImage } from '../lib/utils';
+import { isTrackingEnabled, setTrackingEnabled } from '../lib/tracking';
+import { getSession, logout } from '../lib/auth';
+import { loadFromCloud, syncToCloud, getSyncStatus } from '../lib/sync';
+import { Avatar } from '../components/Avatar';
+export function SettingsPage() {
+  const { state, update, setState, t, lang, setModal, showToast } = useApp();
+  const [name, setName] = useState(state.profile.name || '');
+  const [photo, setPhoto] = useState(state.profile.photo || null);
+  const [trackingOn, setTrackingOn] = useState(() => isTrackingEnabled());
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const photoRef = useRef(null);
+  const fileRef = useRef(null);
+  useEffect(() => { setName(state.profile.name || ''); }, [state.profile.name]);
+  const saveName = () => update((s) => ({ profile: { ...s.profile, name: name.trim() } }));
+  const handlePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizeImage(file, 256);
+      setPhoto(dataUrl);
+      update((s) => ({ profile: { ...s.profile, photo: dataUrl } }));
+      showToast(lang === 'ar' ? 'تم تحديث الصورة' : 'Photo updated', 'good');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const removePhoto = () => {
+    setPhoto(null);
+    update((s) => ({ profile: { ...s.profile, photo: null } }));
+    showToast(lang === 'ar' ? 'اتشالت الصورة' : 'Photo removed');
+  };
+  const exportJSON = () => {
+    download('hasala-backup-' + todayISO() + '.json', JSON.stringify(state, null, 2), 'application/json');
+    showToast(lang === 'ar' ? 'تم التصدير' : 'Exported', 'good');
+  };
+  const exportCSV = () => {
+    const headers = ['date', 'type', 'amount', 'category', 'account', 'to_account', 'note'];
+    const rows = state.transactions.map((x) => [
+      x.date, x.type, x.amount,
+      (state.categories.find((c) => c.id === x.categoryId)?.[lang] || ''),
+      (state.accounts.find((a) => a.id === x.accountId)?.name?.[lang] || ''),
+      (state.accounts.find((a) => a.id === x.toAccountId)?.name?.[lang] || ''),
+      (x.note?.[lang] || ''),
+    ].map(csvEscape).join(','));
+    download('hasala-transactions-' + todayISO() + '.csv', [headers.join(','), ...rows].join('\n'), 'text/csv');
+    showToast(lang === 'ar' ? 'تم التصدير' : 'Exported', 'good');
+  };
+  const importJSON = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data || typeof data !== 'object') throw new Error('bad');
+        const base = blankState();
+        setState({ ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) } });
+        showToast(lang === 'ar' ? 'تم الاستيراد' : 'Imported', 'good');
+      } catch {
+        showToast(lang === 'ar' ? 'الملف مش صالح' : 'Invalid file', 'bad');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+  const loadDemo = () => {
+    setModal({ type: 'confirm', payload: {
+      title: t('set.demo'), message: t('set.demoWarn'), danger: false, confirmLabel: t('set.demo'),
+      onConfirm: () => { setState((s) => ({ ...demoState(), profile: { name: s.profile.name } })); showToast(lang === 'ar' ? 'تم' : 'Done', 'good'); },
+    }});
+  };
+  const resetAll = () => {
+    setModal({ type: 'confirm', payload: {
+      title: t('set.resetQ'), message: t('set.resetWarn'),
+      onConfirm: () => { setState(blankState()); showToast(lang === 'ar' ? 'تم المسح' : 'Cleared'); },
+    }});
+  };
+  return (
+    <div className="space-y-5 anim-rise max-w-3xl">
+      <h1 className="text-[22px] font-extrabold">{t('set.title')}</h1>
+      <Card className="p-5">
+        <h2 className="text-[15px] font-bold mb-4">{t('set.profile')}</h2>
+        <div className="flex items-center gap-4">
+          <label className="press cursor-pointer relative shrink-0">
+            <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+            <Avatar photo={photo} name={name} size={64} rounded="rounded-2xl" />
+            <div className="absolute -bottom-1 -end-1 w-6 h-6 rounded-full bg-accent text-white dark:text-[#04150E] grid place-items-center shadow-md text-[12px] font-bold">
+              +
+            </div>
+          </label>
+          <div className="grow">
+            <Field label={t('set.name')}>
+              <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={saveName} />
+            </Field>
+            {photo && (
+              <button onClick={removePhoto}
+                className="press text-[11px] text-muted hover:text-danger mt-1.5">
+                {lang === 'ar' ? 'شيل الصورة' : 'Remove photo'}
+              </button>
+            )}
+          </div>
+        </div>
+      </Card>
+      <Card className="p-5 space-y-5">
+        <div>
+          <h2 className="text-[15px] font-bold mb-3">{t('set.language')}</h2>
+          <div className="flex gap-2">
+            {[{ v: 'ar', label: 'العربية' }, { v: 'en', label: 'English' }].map((o) => (
+              <button key={o.v} onClick={() => update((s) => ({ settings: { ...s.settings, lang: o.v } }))}
+                className={'press flex-1 h-12 rounded-xl border text-[13.5px] font-bold transition ' +
+                  (lang === o.v ? 'border-accent bg-accentSoft text-accent' : 'border-line text-muted hover:text-ink')}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="pt-5 border-t border-line">
+          <h2 className="text-[15px] font-bold mb-3">{t('set.theme')}</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { v: 'light', label: t('set.light'), icon: 'sun' },
+              { v: 'dark', label: t('set.dark'), icon: 'moon' },
+              { v: 'system', label: t('set.system'), icon: 'settings' },
+            ].map((o) => (
+              <button key={o.v} onClick={() => update((s) => ({ settings: { ...s.settings, theme: o.v } }))}
+                className={'press h-12 rounded-xl border text-[12.5px] font-bold flex items-center justify-center gap-2 transition ' +
+                  (state.settings.theme === o.v ? 'border-accent bg-accentSoft text-accent' : 'border-line text-muted hover:text-ink')}>
+                <Icon name={o.icon} size={15} />{o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="pt-5 border-t border-line">
+          <h2 className="text-[15px] font-bold mb-3">{t('set.currency')}</h2>
+          <div className="flex gap-2 flex-wrap">
+            {Object.entries(CURRENCIES).map(([code, c]) => (
+              <button key={code} onClick={() => update((s) => ({ settings: { ...s.settings, currency: code } }))}
+                className={'press h-11 px-4 rounded-xl border text-[13px] font-bold transition ' +
+                  (state.settings.currency === code ? 'border-accent bg-accentSoft text-accent' : 'border-line text-muted hover:text-ink')}>
+                {code} <span className="opacity-60 ms-1">{c[lang]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[15px] font-bold">{t('set.categories')}</h2>
+          <button onClick={() => setModal({ type: 'addCategory' })} className="press text-[12px] font-semibold text-accent">+ {t('set.addCategory')}</button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {state.categories.map((c) => (
+            <button key={c.id} onClick={() => setModal({ type: 'editCategory', payload: c })}
+              className="press h-9 px-3 rounded-xl bg-surface2 border border-line text-[12.5px] font-semibold flex items-center gap-1.5 hover:border-accent transition">
+              <span>{c.icon}</span>{c[lang]}
+            </button>
+          ))}
+        </div>
+      </Card>
+      <Card className="p-5">
+        <h2 className="text-[15px] font-bold mb-4">{t('set.data')}</h2>
+        <div className="grid sm:grid-cols-2 gap-2.5">
+          <Btn variant="secondary" onClick={exportJSON} className="justify-start"><Icon name="download" size={16} /> {t('set.exportJson')}</Btn>
+          <Btn variant="secondary" onClick={exportCSV} className="justify-start"><Icon name="download" size={16} /> {t('set.exportCsv')}</Btn>
+          <Btn variant="secondary" onClick={() => fileRef.current?.click()} className="justify-start"><Icon name="upload" size={16} /> {t('set.import')}</Btn>
+          <Btn variant="secondary" onClick={loadDemo} className="justify-start"><Icon name="sparkles" size={16} /> {t('set.demo')}</Btn>
+          <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={importJSON} />
+        </div>
+      </Card>
+      <Card className="p-5">
+        <h2 className="text-[15px] font-bold mb-4 text-danger">{t('set.danger')}</h2>
+        <Btn variant="danger" onClick={resetAll}><Icon name="trash" size={15} /> {t('set.reset')}</Btn>
+      </Card>
+      <Card className="p-5">
+        <h2 className="text-[15px] font-bold mb-2">{t('set.about')}</h2>
+        <p className="text-[13px] text-muted leading-relaxed">{t('set.aboutText')}</p>
+      </Card>
+    </div>
+  );
+}
