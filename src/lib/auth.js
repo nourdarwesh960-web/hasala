@@ -1,7 +1,7 @@
 ﻿/* ══════════════════════════════════════════════════════════════
    HASALA AUTH — PBKDF2 + Google Apps Script
    ══════════════════════════════════════════════════════════════ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpM-49gQfDXwKYkyms38rwOJhHLJrV39gC4STt-JRx9o_WhrEPWwYwBM3Cz8tMSkF9e/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyK3d_vEGk-QrCm6IOoWC0nvcGOFIs4RxuVRhi_LzlgtQcnCHSR2CNymczrrTscFTDP/exec';
 const SESSION_KEY = 'hasala.auth.v1';
 const PBKDF2_ITERATIONS = 100000;
 // ══════════════════════════════════════════════════════════════
@@ -325,3 +325,5 @@ export async function logChat({
     context: context || '',
   });
 }
+
+
