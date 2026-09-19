@@ -193,9 +193,7 @@ export function RegisterPage({ onSwitchToLogin, onSuccess, onBack }) {
           onClick={onBack}
           aria-label={lang === 'ar' ? 'رجوع' : 'Back'}
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d={lang === 'ar' ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6'} />
-          </svg>
+          <Icon name={lang === 'ar' ? 'chevronRight' : 'chevronLeft'} size={18} sw={2} />
         </button>
       )}
       <button
@@ -287,16 +285,9 @@ export function RegisterPage({ onSwitchToLogin, onSuccess, onBack }) {
               aria-label={showPw ? t('auth.hidePassword') : t('auth.showPassword')}
             >
               {showPw ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M3 3l18 18" />
-                  <path d="M10.6 6.2A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.2 6.3A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4-.9" />
-                  <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-                </svg>
+                <Icon name="eyeOff" size={20} sw={1.8} />
               ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <Icon name="eye" size={20} sw={1.8} />
               )}
             </button>
           </div>
@@ -361,16 +352,9 @@ export function RegisterPage({ onSwitchToLogin, onSuccess, onBack }) {
               aria-label={showConfirm ? t('auth.hidePassword') : t('auth.showPassword')}
             >
               {showConfirm ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M3 3l18 18" />
-                  <path d="M10.6 6.2A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.2 6.3A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4-.9" />
-                  <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-                </svg>
+                <Icon name="eyeOff" size={20} sw={1.8} />
               ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <Icon name="eye" size={20} sw={1.8} />
               )}
             </button>
           </div>
@@ -387,9 +371,7 @@ export function RegisterPage({ onSwitchToLogin, onSuccess, onBack }) {
           >
             <span className="auth-btn-label">{t('auth.register')}</span>
             <span className="auth-btn-spinner" aria-hidden="true" />
-            <svg className="auth-btn-check" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
+            <Icon name="check" size={18} sw={2.6} className="auth-btn-check" />
           </button>
           {error && <p className="auth-status error">{error}</p>}
           {!error && status && <p className="auth-status info">{status}</p>}
@@ -408,3 +390,5 @@ export function RegisterPage({ onSwitchToLogin, onSuccess, onBack }) {
     </div>
   );
 }
+
+

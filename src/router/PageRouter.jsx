@@ -10,7 +10,7 @@ import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { InstallmentsPage } from '../pages/InstallmentsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { InsightsPage } from '../pages/InsightsPage';
-export function PageRouter() {
+export function PageRouter({ onLogout }) {
   const { page } = useApp();
   switch (page) {
     case 'dashboard': return <DashboardPage />;
@@ -23,7 +23,7 @@ export function PageRouter() {
     case 'calendar': return <CalendarPage />;
     case 'analytics': return <AnalyticsPage />;
     case 'insights': return <InsightsPage />;
-    case 'settings': return <SettingsPage />;
+    case 'settings': return <SettingsPage onLogout={onLogout} />;
     case 'more': return <DashboardPage />;
     default: return <DashboardPage />;
   }

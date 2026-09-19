@@ -6,10 +6,10 @@ import { CURRENCIES } from '../lib/constants';
 import { demoState, blankState } from '../lib/demo';
 import { todayISO, csvEscape, download, resizeImage } from '../lib/utils';
 import { isTrackingEnabled, setTrackingEnabled } from '../lib/tracking';
-import { getSession, updateProfile } from '../lib/auth';
+import { getSession, logout } from '../lib/auth';
 import { loadFromCloud, syncToCloud, getSyncStatus } from '../lib/sync';
 import { Avatar } from '../components/Avatar';
-export function SettingsPage({ onLogout }) {
+export function SettingsPage() {
   const { state, update, setState, t, lang, setModal, showToast } = useApp();
   const [name, setName] = useState(state.profile.name || '');
   const [photo, setPhoto] = useState(state.profile.photo || null);
@@ -18,47 +18,14 @@ export function SettingsPage({ onLogout }) {
   const photoRef = useRef(null);
   const fileRef = useRef(null);
   useEffect(() => { setName(state.profile.name || ''); }, [state.profile.name]);
-  const saveName = async () => {
-    const nextName = name.trim();
-    update((s) => ({
-      profile: {
-        ...s.profile,
-        name: nextName,
-      },
-    }));
-    const session = getSession();
-    if (session?.userId) {
-      const result = await updateProfile({
-        userId: session.userId,
-        name: nextName,
-      });
-      if (!result.ok) {
-        console.error('Failed to save profile name:', result);
-      }
-    }
-  };
+  const saveName = () => update((s) => ({ profile: { ...s.profile, name: name.trim() } }));
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const dataUrl = await resizeImage(file, 256);
       setPhoto(dataUrl);
-      update((s) => ({
-        profile: {
-          ...s.profile,
-          photo: dataUrl,
-        },
-      }));
-      const session = getSession();
-      if (session?.userId) {
-        const result = await updateProfile({
-          userId: session.userId,
-          photo: dataUrl,
-        });
-        if (!result.ok) {
-          console.error('Failed to save profile photo:', result);
-        }
-      }
+      update((s) => ({ profile: { ...s.profile, photo: dataUrl } }));
       showToast(lang === 'ar' ? 'تم تحديث الصورة' : 'Photo updated', 'good');
     } catch (err) {
       console.error(err);
@@ -210,16 +177,6 @@ export function SettingsPage({ onLogout }) {
       <Card className="p-5">
         <h2 className="text-[15px] font-bold mb-4 text-danger">{t('set.danger')}</h2>
         <Btn variant="danger" onClick={resetAll}><Icon name="trash" size={15} /> {t('set.reset')}</Btn>
-      </Card>
-      <Card className="p-5">
-        <Btn
-          variant="secondary"
-          onClick={onLogout}
-          className="w-full justify-center text-danger border-danger/20 hover:border-danger/40"
-        >
-          <Icon name="logout" size={16} />
-          {lang === 'ar' ? '\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c' : 'Log out'}
-        </Btn>
       </Card>
       <Card className="p-5">
         <h2 className="text-[15px] font-bold mb-2">{t('set.about')}</h2>

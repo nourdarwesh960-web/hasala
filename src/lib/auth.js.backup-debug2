@@ -257,18 +257,18 @@ export async function updateProfile({
   photo,
 }) {
   const session = getSession();
-  console.log('HASALA updateProfile REQUEST:', {
-    action: 'update_profile',
-    userId,
-    name,
-    photo: photo ? ('PHOTO length=' + photo.length) : photo,
-  });
   if (!session) {
     return {
       ok: false,
       error: 'not_logged_in',
     };
   }
+  console.log('HASALA updateProfile REQUEST:', {
+    action: 'update_profile',
+    userId,
+    name,
+    photo: photo ? ('PHOTO length=' + photo.length) : photo,
+  });
   const res = await callApi({
     action: 'update_profile',
     userId,
@@ -280,11 +280,8 @@ export async function updateProfile({
     console.error('HASALA updateProfile FAILED:', res);
     return res;
   }
-  // Read the latest session again so concurrent profile updates
-  // cannot overwrite each other's changes.
-  const latestSession = getSession() || session;
   const next = {
-    ...latestSession,
+    ...session,
   };
   if (name !== undefined) {
     next.name = name;
@@ -293,12 +290,15 @@ export async function updateProfile({
     next.photo = photo;
   }
   saveSession(next);
-  console.log('HASALA updateProfile SESSION SAVED:', next);
   return {
     ok: true,
     session: next,
   };
-}export async function logUsage({
+}
+// ══════════════════════════════════════════════════════════════
+// LOG USAGE
+// ══════════════════════════════════════════════════════════════
+export async function logUsage({
   event,
   page,
   device,
@@ -333,8 +333,6 @@ export async function logChat({
     context: context || '',
   });
 }
-
-
 
 
 

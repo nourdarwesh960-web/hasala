@@ -138,7 +138,7 @@ function Shell() {
       <TopBar onOpenCommand={() => setCommandOpen(true)} onLogout={handleLogout} />
       <main className="lg:ps-[260px] pb-28 lg:pb-10">
         <div className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 lg:pt-8">
-          <PageRouter />
+          <PageRouter onLogout={handleLogout} />
         </div>
       </main>
       <MobileNav />

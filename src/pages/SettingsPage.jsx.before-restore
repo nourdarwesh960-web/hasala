@@ -6,7 +6,7 @@ import { CURRENCIES } from '../lib/constants';
 import { demoState, blankState } from '../lib/demo';
 import { todayISO, csvEscape, download, resizeImage } from '../lib/utils';
 import { isTrackingEnabled, setTrackingEnabled } from '../lib/tracking';
-import { getSession, updateProfile } from '../lib/auth';
+import { getSession, logout, updateProfile } from '../lib/auth';
 import { loadFromCloud, syncToCloud, getSyncStatus } from '../lib/sync';
 import { Avatar } from '../components/Avatar';
 export function SettingsPage({ onLogout }) {
@@ -19,24 +19,24 @@ export function SettingsPage({ onLogout }) {
   const fileRef = useRef(null);
   useEffect(() => { setName(state.profile.name || ''); }, [state.profile.name]);
   const saveName = async () => {
-    const nextName = name.trim();
-    update((s) => ({
-      profile: {
-        ...s.profile,
-        name: nextName,
-      },
-    }));
-    const session = getSession();
-    if (session?.userId) {
-      const result = await updateProfile({
-        userId: session.userId,
-        name: nextName,
-      });
-      if (!result.ok) {
-        console.error('Failed to save profile name:', result);
-      }
+  const nextName = name.trim();
+  update((s) => ({
+    profile: {
+      ...s.profile,
+      name: nextName,
+    },
+  }));
+  const session = getSession();
+  if (session?.userId) {
+    const result = await updateProfile({
+      userId: session.userId,
+      name: nextName,
+    });
+    if (!result.ok) {
+      console.error('Failed to save profile name:', result);
     }
-  };
+  }
+};
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -59,7 +59,10 @@ export function SettingsPage({ onLogout }) {
           console.error('Failed to save profile photo:', result);
         }
       }
-      showToast(lang === 'ar' ? 'تم تحديث الصورة' : 'Photo updated', 'good');
+      showToast(
+        lang === 'ar' ? 'ت تحدث اصرة' : 'Photo updated',
+        'good'
+      );
     } catch (err) {
       console.error(err);
     }
@@ -67,11 +70,11 @@ export function SettingsPage({ onLogout }) {
   const removePhoto = () => {
     setPhoto(null);
     update((s) => ({ profile: { ...s.profile, photo: null } }));
-    showToast(lang === 'ar' ? 'اتشالت الصورة' : 'Photo removed');
+    showToast(lang === 'ar' ? 'اتشات اصرة' : 'Photo removed');
   };
   const exportJSON = () => {
     download('hasala-backup-' + todayISO() + '.json', JSON.stringify(state, null, 2), 'application/json');
-    showToast(lang === 'ar' ? 'تم التصدير' : 'Exported', 'good');
+    showToast(lang === 'ar' ? 'ت اتصدر' : 'Exported', 'good');
   };
   const exportCSV = () => {
     const headers = ['date', 'type', 'amount', 'category', 'account', 'to_account', 'note'];
@@ -83,7 +86,7 @@ export function SettingsPage({ onLogout }) {
       (x.note?.[lang] || ''),
     ].map(csvEscape).join(','));
     download('hasala-transactions-' + todayISO() + '.csv', [headers.join(','), ...rows].join('\n'), 'text/csv');
-    showToast(lang === 'ar' ? 'تم التصدير' : 'Exported', 'good');
+    showToast(lang === 'ar' ? 'ت اتصدر' : 'Exported', 'good');
   };
   const importJSON = (e) => {
     const file = e.target.files?.[0];
@@ -95,9 +98,9 @@ export function SettingsPage({ onLogout }) {
         if (!data || typeof data !== 'object') throw new Error('bad');
         const base = blankState();
         setState({ ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) } });
-        showToast(lang === 'ar' ? 'تم الاستيراد' : 'Imported', 'good');
+        showToast(lang === 'ar' ? 'ت ااستراد' : 'Imported', 'good');
       } catch {
-        showToast(lang === 'ar' ? 'الملف مش صالح' : 'Invalid file', 'bad');
+        showToast(lang === 'ar' ? 'اف ش صاح' : 'Invalid file', 'bad');
       }
     };
     reader.readAsText(file);
@@ -106,13 +109,13 @@ export function SettingsPage({ onLogout }) {
   const loadDemo = () => {
     setModal({ type: 'confirm', payload: {
       title: t('set.demo'), message: t('set.demoWarn'), danger: false, confirmLabel: t('set.demo'),
-      onConfirm: () => { setState((s) => ({ ...demoState(), profile: { name: s.profile.name } })); showToast(lang === 'ar' ? 'تم' : 'Done', 'good'); },
+      onConfirm: () => { setState((s) => ({ ...demoState(), profile: { name: s.profile.name } })); showToast(lang === 'ar' ? 'ت' : 'Done', 'good'); },
     }});
   };
   const resetAll = () => {
     setModal({ type: 'confirm', payload: {
       title: t('set.resetQ'), message: t('set.resetWarn'),
-      onConfirm: () => { setState(blankState()); showToast(lang === 'ar' ? 'تم المسح' : 'Cleared'); },
+      onConfirm: () => { setState(blankState()); showToast(lang === 'ar' ? 'ت اسح' : 'Cleared'); },
     }});
   };
   return (
@@ -135,7 +138,7 @@ export function SettingsPage({ onLogout }) {
             {photo && (
               <button onClick={removePhoto}
                 className="press text-[11px] text-muted hover:text-danger mt-1.5">
-                {lang === 'ar' ? 'شيل الصورة' : 'Remove photo'}
+                {lang === 'ar' ? 'ش اصرة' : 'Remove photo'}
               </button>
             )}
           </div>
@@ -145,7 +148,7 @@ export function SettingsPage({ onLogout }) {
         <div>
           <h2 className="text-[15px] font-bold mb-3">{t('set.language')}</h2>
           <div className="flex gap-2">
-            {[{ v: 'ar', label: 'العربية' }, { v: 'en', label: 'English' }].map((o) => (
+            {[{ v: 'ar', label: 'اعربة' }, { v: 'en', label: 'English' }].map((o) => (
               <button key={o.v} onClick={() => update((s) => ({ settings: { ...s.settings, lang: o.v } }))}
                 className={'press flex-1 h-12 rounded-xl border text-[13.5px] font-bold transition ' +
                   (lang === o.v ? 'border-accent bg-accentSoft text-accent' : 'border-line text-muted hover:text-ink')}>
@@ -209,16 +212,21 @@ export function SettingsPage({ onLogout }) {
       </Card>
       <Card className="p-5">
         <h2 className="text-[15px] font-bold mb-4 text-danger">{t('set.danger')}</h2>
-        <Btn variant="danger" onClick={resetAll}><Icon name="trash" size={15} /> {t('set.reset')}</Btn>
+        <Btn variant="danger" onClick={resetAll}>
+          <Icon name="trash" size={15} /> {t('set.reset')}
+        </Btn>
       </Card>
       <Card className="p-5">
+        <h2 className="text-[15px] font-bold mb-4">
+          {lang === 'ar' ? '' : 'Account'}
+        </h2>
         <Btn
           variant="secondary"
           onClick={onLogout}
-          className="w-full justify-center text-danger border-danger/20 hover:border-danger/40"
+          className="justify-start"
         >
           <Icon name="logout" size={16} />
-          {lang === 'ar' ? '\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c' : 'Log out'}
+          {lang === 'ar' ? ' ' : 'Log out'}
         </Btn>
       </Card>
       <Card className="p-5">
@@ -228,3 +236,7 @@ export function SettingsPage({ onLogout }) {
     </div>
   );
 }
+
+
+
+

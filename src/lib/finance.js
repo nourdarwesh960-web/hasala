@@ -32,6 +32,8 @@ export function computeTotals(state) {
   const balances = computeBalances(accounts, transactions);
   let cash = 0, creditDebt = 0;
   for (const a of accounts) {
+    // Not My Account balances are tracked but excluded from personal totals.
+    if (a.personal === false) continue;
     const b = balances[a.id] || 0;
     if (isLiabilityAcc(a)) { if (b < 0) creditDebt += -b; else cash += b; }
     else { if (b >= 0) cash += b; else creditDebt += -b; }
@@ -51,6 +53,9 @@ export function monthStats(state, refISO) {
   const byCat = {}, byAcc = {}, bySource = {}, byBudget = {};
   for (const t of state.transactions) {
     if (!sameMonth(t.date, refISO)) continue;
+    // Not My Account transactions are excluded from personal income/expense stats.
+    const txAccount = state.accounts.find((a) => a.id === t.accountId);
+    if (txAccount?.personal === false) continue;
     if (t.type === 'income') {
       income += t.amount;
       const k = t.sourceId || t.categoryId || 'src_other';

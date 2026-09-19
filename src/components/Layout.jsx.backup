@@ -111,175 +111,60 @@ className="press h-10 px-3 rounded-xl bg-surface2 border border-line text-[12.5p
 </header>
 );
 }
-
-
 export function MobileNav() {
-  const { page, setPage, t, setFabOpen } = useApp();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreItems = MORE_ITEMS.filter((item) => item.id !== 'accounts');
-  const isMoreActive = moreItems.some((item) => item.id === page);
-  const go = (id) => {
-    setMoreOpen(false);
-    setPage(id);
-  };
-  return (
-    <>
-      {moreOpen && (
-        <div
-          className="mobile-more-backdrop lg:hidden"
-          onClick={() => setMoreOpen(false)}
-        />
-      )}
-      <div
-        className={
-          'mobile-more-menu lg:hidden ' +
-          (moreOpen ? 'mobile-more-menu-open' : '')
-        }
-      >
-        <div className="mobile-more-header">
-          <div>
-            <div className="text-[14px] font-bold">
-              {t('nav.more')}
-            </div>
-            <div className="text-[11px] text-muted mt-0.5">
-              {t('app.name')}
-            </div>
-          </div>
-          <button
-            type="button"
-            className="mobile-more-close press"
-            onClick={() => setMoreOpen(false)}
-          >
-            <Icon name="x" size={17} sw={2} />
-          </button>
-        </div>
-        <div className="mobile-more-grid">
-          {moreItems.map((item) => {
-            const active = page === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => go(item.id)}
-                className={
-                  'mobile-more-item press ' +
-                  (active ? 'mobile-more-item-active' : '')
-                }
-              >
-                <span className="mobile-more-icon">
-                  <Icon
-                    name={item.icon}
-                    size={19}
-                    sw={active ? 2.1 : 1.75}
-                  />
-                </span>
-                <span>{t(item.label)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <nav className="mobile-dock lg:hidden">
-        <div className="mobile-dock-inner">
-          <button
-            type="button"
-            onClick={() => go('dashboard')}
-            className={
-              'mobile-nav-item press ' +
-              (page === 'dashboard'
-                ? 'mobile-nav-item-active'
-                : '')
-            }
-          >
-            <span className="mobile-nav-icon">
-              <Icon
-                name="home"
-                size={20}
-                sw={page === 'dashboard' ? 2.15 : 1.7}
-              />
-            </span>
-            <span className="mobile-nav-label">
-              {t('nav.dashboard')}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => go('transactions')}
-            className={
-              'mobile-nav-item press ' +
-              (page === 'transactions'
-                ? 'mobile-nav-item-active'
-                : '')
-            }
-          >
-            <span className="mobile-nav-icon">
-              <Icon
-                name="list"
-                size={20}
-                sw={page === 'transactions' ? 2.15 : 1.7}
-              />
-            </span>
-            <span className="mobile-nav-label">
-              {t('nav.transactions')}
-            </span>
-          </button>
-          <div className="mobile-fab-slot">
-            <button
-              type="button"
-              onClick={() => setFabOpen(true)}
-              className="mobile-fab press"
-              aria-label={t('tx.add')}
-            >
-              <Icon name="plus" size={23} sw={2.3} />
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={() => go('accounts')}
-            className={
-              'mobile-nav-item press ' +
-              (page === 'accounts'
-                ? 'mobile-nav-item-active'
-                : '')
-            }
-          >
-            <span className="mobile-nav-icon">
-              <Icon
-                name="wallet"
-                size={20}
-                sw={page === 'accounts' ? 2.15 : 1.7}
-              />
-            </span>
-            <span className="mobile-nav-label">
-              {t('nav.accounts')}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMoreOpen((value) => !value)}
-            className={
-              'mobile-nav-item press ' +
-              (moreOpen || isMoreActive
-                ? 'mobile-nav-item-active'
-                : '')
-            }
-          >
-            <span className="mobile-nav-icon">
-              <Icon
-                name="more"
-                size={20}
-                sw={moreOpen || isMoreActive ? 2.15 : 1.7}
-              />
-            </span>
-            <span className="mobile-nav-label">
-              {t('nav.more')}
-            </span>
-          </button>
-        </div>
-      </nav>
-    </>
-  );
+const { page, setPage, t, setFabOpen } = useApp();
+const morePages = MORE_ITEMS.map((i) => i.id);
+const isMoreActive = morePages.includes(page);
+return (
+<nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-lg border-t border-line pb-[env(safe-area-inset-bottom)]">
+<div className="flex items-stretch h-[62px]">
+{MOBILE_NAV.map((item) => {
+if (item.id === 'fab') {
+return (
+<div key="fab-slot" className="flex-1 relative">
+<button onClick={() => setFabOpen(true)}
+className="press absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-2xl bg-accent text-white dark:text-[#04150E] grid place-items-center shadow-lg shadow-accent/25">
+<Icon name="plus" size={24} sw={2.4} />
+</button>
+<div className="absolute bottom-1.5 inset-x-0 text-center text-[10px] font-semibold text-muted pointer-events-none">
+{t('tx.add')}
+</div>
+</div>
+);
+}
+const active = item.id === 'more' ? isMoreActive : page === item.id;
+return (
+<button key={item.id} onClick={() => setPage(item.id)}
+className={'press flex-1 flex flex-col items-center justify-center gap-1 transition ' +
+(active ? 'text-accent' : 'text-muted')}>
+<Icon name={item.icon} size={21} sw={active ? 2.2 : 1.75} />
+<span className="text-[10px] font-semibold">{t(item.label)}</span>
+</button>
+);
+})}
+</div>
+</nav>
+);
 }
 export function MoreSheet() {
-  return null;
+const { page, setPage, t } = useApp();
+if (page !== 'more') return null;
+return (
+<div className="lg:hidden fixed inset-0 z-[90]" onClick={() => setPage('dashboard')}>
+<div className="absolute inset-0 bg-black/40 anim-fade" />
+<div className="absolute bottom-0 inset-x-0 bg-surface rounded-t-3xl border-t border-line p-4 pb-8 anim-sheet"
+onClick={(e) => e.stopPropagation()}>
+<div className="w-10 h-1 rounded-full bg-line mx-auto mb-4" />
+<div className="grid grid-cols-3 gap-3">
+{MORE_ITEMS.map((i) => (
+<button key={i.id} onClick={() => setPage(i.id)}
+className="press flex flex-col items-center gap-2 py-3.5 rounded-2xl bg-surface2 text-ink">
+<Icon name={i.icon} size={22} />
+<span className="text-[11.5px] font-semibold">{t(i.label)}</span>
+</button>
+))}
+</div>
+</div>
+</div>
+);
 }

@@ -9,37 +9,27 @@ export function DashboardPage() {
   const { state, t, lang, fmtMoney, fmtDateShort, totals, insights, setModal, setPage } = useApp();
   const today = todayISO();
   const thisM = monthStats(state, today);
-
+  // SMART_BUDGET_FORCE_V2
   const smartBudgets = useMemo(() => {
-    const d = (x) => new Date(x + "T00:00:00");
-    const days = (a, b) =>
-      Math.round((d(b) - d(a)) / 86400000);
+    const dateValue = (d) => new Date(d + "T00:00:00");
+    const daysBetween = (a, b) =>
+      Math.round((dateValue(b) - dateValue(a)) / 86400000);
     return (state.budgets || [])
-      .filter((b) => Number(b.amount) > 0)
+      .filter((b) => b.startDate && b.endDate && Number(b.amount) > 0)
       .map((b) => {
-        const currentMonthStart =
-          today.slice(0, 8) + "01";
-        const currentMonthEndDate =
-          new Date(
-            Number(today.slice(0, 4)),
-            Number(today.slice(5, 7)),
-            0
-          );
-        const currentMonthEnd =
-          currentMonthEndDate.toISOString().slice(0, 10);
-        const startDate =
-          b.startDate || currentMonthStart;
-        const endDate =
-          b.endDate || currentMonthEnd;
+        const totalDays = Math.max(
+          1,
+          daysBetween(b.startDate, b.endDate) + 1
+        );
         let spent = 0;
-        let todaySpent = 0;
+        let spentToday = 0;
         for (const tx of state.transactions || []) {
           if (tx.type !== "expense") continue;
-          if (tx.date < startDate || tx.date > endDate) continue;
-          const acc = (state.accounts || []).find(
+          if (tx.date < b.startDate || tx.date > b.endDate) continue;
+          const account = (state.accounts || []).find(
             (a) => a.id === tx.accountId
           );
-          if (acc?.personal === false) continue;
+          if (account?.personal === false) continue;
           const belongs = b.isGeneral
             ? tx.budgetId === b.id
             : tx.budgetId
@@ -49,46 +39,29 @@ export function DashboardPage() {
           const amount = Number(tx.amount) || 0;
           spent += amount;
           if (tx.date === today) {
-            todaySpent += amount;
+            spentToday += amount;
           }
         }
-        const totalDays = Math.max(
+        const remaining = Math.max(0, Number(b.amount) - spent);
+        const elapsedDays = Math.max(
           1,
-          days(startDate, endDate) + 1
+          daysBetween(b.startDate, today) + 1
         );
         const daysLeft = Math.max(
           0,
-          days(today, endDate)
+          daysBetween(today, b.endDate)
         );
-
-        const remaining = Math.max(
-          0,
-          Number(b.amount) - spent
-        );
-        const dailyLimit =
-          Number(b.amount) / totalDays;
+        const dailyLimit = Number(b.amount) / totalDays;
         const adjustedDaily =
           daysLeft > 0
             ? remaining / daysLeft
             : remaining;
-        console.log("SMART BUDGET DEBUG:", {
-          name: b.name,
-          amount: b.amount,
-          startDate,
-          endDate,
-          today,
-          totalDays,
-          daysLeft,
-          spent,
-          remaining,
-          dailyLimit,
-          adjustedDaily,
-        });        let status = "good";
-        if (today < startDate) {
+        let status = "good";
+        if (today < b.startDate) {
           status = "upcoming";
-        } else if (today > endDate) {
+        } else if (today > b.endDate) {
           status = "ended";
-        } else if (todaySpent > dailyLimit) {
+        } else if (spentToday > dailyLimit) {
           status = "over";
         } else if (adjustedDaily < dailyLimit * 0.8) {
           status = "tight";
@@ -100,17 +73,132 @@ export function DashboardPage() {
             );
         return {
           ...b,
-          category,
           spent,
-          todaySpent,
+          spentToday,
           remaining,
+          totalDays,
+          elapsedDays,
           daysLeft,
           dailyLimit,
           adjustedDaily,
           status,
+          category,
         };
       })
       .filter((b) => b.status !== "ended")
+      .sort((a, b) => {
+        const order = {
+          over: 0,
+          tight: 1,
+          good: 2,
+          upcoming: 3,
+        };
+        return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+      });
+  }, [state, today]);
+
+
+  // SMART_BUDGET_DASHBOARD_V1
+  const smartBudgets = useMemo(() => {
+    const toDate = (value) => new Date(value + 'T00:00:00');
+    const daysBetween = (from, to) =>
+      Math.round(
+        (toDate(to) - toDate(from)) / 86400000
+      );
+    return (state.budgets || [])
+      .filter((b) => b.startDate && b.endDate)
+      .map((budget) => {
+        const totalDays =
+          Math.max(
+            1,
+            daysBetween(budget.startDate, budget.endDate) + 1
+          );
+        const started = today >= budget.startDate;
+        const ended = today > budget.endDate;
+        const active = started && !ended;
+        let spent = 0;
+        let spentToday = 0;
+        for (const tx of state.transactions) {
+          if (tx.type !== 'expense') continue;
+          const account = state.accounts.find(
+            (a) => a.id === tx.accountId
+          );
+          // Not My Account is excluded from personal budgets
+          if (account?.personal === false) continue;
+          if (
+            tx.date < budget.startDate ||
+            tx.date > budget.endDate
+          ) {
+            continue;
+          }
+          let belongs = false;
+          if (tx.budgetId) {
+            belongs = tx.budgetId === budget.id;
+          } else if (!budget.isGeneral) {
+            belongs =
+              !!budget.categoryId &&
+              tx.categoryId === budget.categoryId;
+          }
+          if (!belongs) continue;
+          spent += Number(tx.amount) || 0;
+          if (tx.date === today) {
+            spentToday += Number(tx.amount) || 0;
+          }
+        }
+        const remaining = Math.max(
+          0,
+          budget.amount - spent
+        );
+        const baseDaily =
+          budget.amount / totalDays;
+        const daysLeft = active
+          ? Math.max(
+              0,
+              daysBetween(today, budget.endDate)
+            )
+          : 0;
+        const futureDays =
+          spentToday > 0
+            ? daysLeft
+            : daysLeft + 1;
+        const adjustedDaily =
+          active && futureDays > 0
+            ? remaining / futureDays
+            : 0;
+        let status = 'good';
+        if (!started) {
+          status = 'upcoming';
+        } else if (ended) {
+          status = 'ended';
+        } else if (spentToday > baseDaily) {
+          status = 'over';
+        } else if (
+          adjustedDaily < baseDaily * 0.8
+        ) {
+          status = 'tight';
+        }
+        const category = budget.isGeneral
+          ? null
+          : state.categories.find(
+              (c) => c.id === budget.categoryId
+            );
+        return {
+          ...budget,
+          category,
+          spent,
+          spentToday,
+          remaining,
+          totalDays,
+          daysLeft,
+          baseDaily,
+          adjustedDaily,
+          status,
+        };
+      })
+      .filter(
+        (b) =>
+          b.status !== 'ended'
+      )
       .sort((a, b) => {
         const priority = {
           over: 0,
@@ -124,7 +212,6 @@ export function DashboardPage() {
         );
       });
   }, [state, today]);
-
   const upcoming = upcomingItems(state, 30);
   const surplus = useMemo(() => getSurplus(state), [state]);
   const catData = useMemo(() => Object.entries(thisM.byCat).map(([cid, v]) => {
@@ -172,14 +259,14 @@ export function DashboardPage() {
             <div>
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted mb-0.5">
                 <Icon name="arrowDown" size={12} sw={2.6} className="text-accent" />
-                {t('dash.income')} ┬╖ {t('dash.thisMonth')}
+                {t('dash.income')} · {t('dash.thisMonth')}
               </div>
               <div className="text-[17px] font-bold num text-accent">{fmtMoney(thisM.income)}</div>
             </div>
             <div>
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted mb-0.5">
                 <Icon name="arrowUp" size={12} sw={2.6} className="text-danger" />
-                {t('dash.spent')} ┬╖ {t('dash.thisMonth')}
+                {t('dash.spent')} · {t('dash.thisMonth')}
               </div>
               <div className="text-[17px] font-bold num text-danger">{fmtMoney(thisM.expense)}</div>
             </div>
@@ -190,21 +277,212 @@ export function DashboardPage() {
           </div>
         </div>
       </Card>
+      {/* SMART_BUDGET_CARD_V1 */}
+      {smartBudgets.length > 0 && (
+        <Card className="p-4 sm:p-5 tilt-3d overflow-hidden">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-accentSoft text-accent grid place-items-center">
+                <Icon name="pie" size={17} sw={2} />
+              </div>
+              <div>
+                <h3 className="text-[14px] font-bold">
+                  {lang === 'ar'
+                    ? '\u0645\u064a\u0632\u0627\u0646\u064a\u0627\u062a\u0643'
+                    : 'Your Budgets'}
+                </h3>
+                <div className="text-[10.5px] text-muted">
+                  {lang === 'ar'
+                    ? '\u0645\u062a\u0627\u0628\u0639\u0629 \u0630\u0643\u064a\u0629 \u0644\u0635\u0631\u0641\u0643'
+                    : 'Smart spending tracking'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setPage('budgets')}
+              className="press text-[11.5px] font-semibold text-accent"
+            >
+              {lang === 'ar'
+                ? '\u0639\u0631\u0636 \u0627\u0644\u0643\u0644'
+                : 'View all'}
+            </button>
+          </div>
+          <div className="space-y-2.5">
+            {smartBudgets.slice(0, 3).map((b) => {
+              const statusData = {
+                good: {
+                  bg: 'bg-accentSoft',
+                  fg: 'text-accent',
+                  icon: 'check',
+                  ar: '\u0644\u0633\u0647 \u0641\u064a \u0627\u0644\u0645\u0639\u062f\u0644',
+                  en: 'On track',
+                },
+                over: {
+                  bg: 'bg-dangerSoft',
+                  fg: 'text-danger',
+                  icon: 'alertTri',
+                  ar: '\u0635\u0631\u0641\u062a \u0632\u064a\u0627\u062f\u0629 \u0627\u0644\u0646\u0647\u0627\u0631\u062f\u0647',
+                  en: 'Over today',
+                },
+                tight: {
+                  bg: 'bg-warnSoft',
+                  fg: 'text-warn',
+                  icon: 'clock',
+                  ar: '\u0644\u0627\u0632\u0645 \u062a\u0647\u062f\u064a \u0627\u0644\u0635\u0631\u0641',
+                  en: 'Slow down',
+                },
+                upcoming: {
+                  bg: 'bg-surface2',
+                  fg: 'text-muted',
+                  icon: 'calendar',
+                  ar: '\u0644\u0633\u0647 \u0645\u0628\u062f\u0623\u062a\u0634',
+                  en: 'Not started',
+                },
+              }[b.status];
+              const name = b.isGeneral
+                ? (
+                    lang === 'ar'
+                      ? '\u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629 \u0627\u0644\u0639\u0627\u0645\u0629'
+                      : 'General budget'
+                  )
+                : b.category?.[lang];
+              return (
+                <div
+                  key={b.id}
+                  className="rounded-xl border border-line bg-surface2/40 p-3"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={
+                        'w-8 h-8 rounded-lg grid place-items-center shrink-0 ' +
+                        statusData.bg + ' ' + statusData.fg
+                      }
+                    >
+                      <Icon
+                        name={statusData.icon}
+                        size={14}
+                        sw={2}
+                      />
+                    </div>
+                    <div className="min-w-0 grow">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12.5px] font-bold truncate">
+                          {name}
+                        </span>
+                        <span
+                          className={
+                            'text-[10px] font-bold shrink-0 ' +
+                            statusData.fg
+                          }
+                        >
+                          {lang === 'ar'
+                            ? statusData.ar
+                            : statusData.en}
+                        </span>
+                      </div>
+                      <div className="text-[10.5px] text-muted mt-0.5 num">
+                        {fmtMoney(b.spentToday)}
+                        {' / '}
+                        {fmtMoney(b.baseDaily)}
+                        {' '}
+                        {lang === 'ar'
+                          ? '\u0627\u0644\u064a\u0648\u0645'
+                          : 'today'}
+                      </div>
+                    </div>
+                    <div className="text-end shrink-0">
+                      <div className="text-[12.5px] font-extrabold num">
+                        {fmtMoney(b.remaining)}
+                      </div>
+                      <div className="text-[9.5px] text-muted">
+                        {lang === 'ar'
+                          ? '\u0645\u062a\u0628\u0642\u064a'
+                          : 'remaining'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 pt-2.5 border-t border-line text-[10.5px] leading-5">
+                    {b.status === 'good' && (
+                      <span className="text-muted">
+                        {lang === 'ar'
+                          ? '\u0623\u0646\u062a \u0644\u0633\u0647 \u0641\u064a \u0627\u0644\u0645\u0639\u062f\u0644. \u062e\u0644\u064a\u0643 \u0642\u0631\u064a\u0628 \u0645\u0646 '
+                          : 'You are on track. Stay around '}
+                        <strong className="text-ink num">
+                          {fmtMoney(b.baseDaily)}
+                        </strong>
+                        {lang === 'ar'
+                          ? ' \u064a\u0648\u0645\u064a\u064b\u0627.'
+                          : ' per day.'}
+                      </span>
+                    )}
+                    {b.status === 'over' && (
+                      <span className="text-danger">
+                        {lang === 'ar'
+                          ? '\u0627\u0644\u0646\u0647\u0627\u0631\u062f\u0647 \u0635\u0631\u0641\u062a '
+                          : 'Today you spent '}
+                        <strong className="num">
+                          {fmtMoney(b.spentToday)}
+                        </strong>
+                        {lang === 'ar'
+                          ? ' \u0628\u062f\u0644 '
+                          : ' vs '}
+                        <strong className="num">
+                          {fmtMoney(b.baseDaily)}
+                        </strong>
+                        {lang === 'ar'
+                          ? '. \u0645\u0646 \u0628\u0643\u0631\u0647 \u062e\u0644\u064a \u062d\u062f\u0643 \u062d\u0648\u0627\u0644\u064a '
+                          : '. From tomorrow, try to stay around '}
+                        <strong className="num">
+                          {fmtMoney(b.adjustedDaily)}
+                        </strong>
+                        {lang === 'ar'
+                          ? ' \u064a\u0648\u0645\u064a\u064b\u0627.'
+                          : ' per day.'}
+                      </span>
+                    )}
+                    {b.status === 'tight' && (
+                      <span className="text-warn">
+                        {lang === 'ar'
+                          ? '\u062e\u0644\u064a \u0628\u0627\u0644\u0643. \u0644\u0627\u0632\u0645 \u062a\u0643\u0648\u0646 \u062d\u0648\u0627\u0644\u064a '
+                          : 'Careful. You need about '}
+                        <strong className="num">
+                          {fmtMoney(b.adjustedDaily)}
+                        </strong>
+                        {lang === 'ar'
+                          ? ' \u064a\u0648\u0645\u064a\u064b\u0627 \u0644\u0628\u0627\u0642\u064a \u0627\u0644\u0641\u062a\u0631\u0629.'
+                          : ' per day for the rest of the period.'}
+                      </span>
+                    )}
+                    {b.status === 'upcoming' && (
+                      <span className="text-muted">
+                        {lang === 'ar'
+                          ? '\u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629 \u0644\u0645 \u062a\u0628\u062f\u0623 \u0628\u0639\u062f.'
+                          : 'This budget has not started yet.'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
+      {/* SMART_BUDGET_CARD_FORCE_V2 */}
       {smartBudgets.length > 0 && (
         <Card className="p-4 overflow-hidden relative">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-accentSoft text-accent grid place-items-center shrink-0">
               <Icon name="pie" size={20} sw={2.1} />
             </div>
-            <div className="grow min-w-0">
+            <div className="min-w-0 grow">
               <div className="text-[14px] font-extrabold">
-                {lang === "ar" ? "\u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629 \u0627\u0644\u0630\u0643\u064a\u0629" : "Smart Budget"}
+                {lang === "ar" ? "????????? ??????" : "Smart Budget"}
               </div>
               <div className="text-[11px] text-muted">
                 {lang === "ar"
-                  ? "\u0627\u0644\u062d\u062f \u0627\u0644\u064a\u0648\u0645\u064a \u0628\u064a\u062a\u0638\u0628\u0637 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627 \u062d\u0633\u0628 \u0635\u0631\u0641\u0643"
-                  : "Your daily limit adjusts with spending"}
+                  ? "?????? ?????? ???? ?????? ??? ????"
+                  : "Your daily limit adjusts with your spending"}
               </div>
             </div>
             <button
@@ -212,32 +490,22 @@ export function DashboardPage() {
               className="text-[11px] font-bold text-accent press"
               onClick={() => setPage("budgets")}
             >
-              {lang === "ar" ? "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644" : "View all"}
+              {lang === "ar" ? "??? ????" : "View all"}
             </button>
           </div>
           <div className="space-y-2">
             {smartBudgets.slice(0, 3).map((b) => {
               const name = b.category
                 ? b.category[lang]
-                : (lang === "ar"
-                  ? "\u0643\u0644 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a"
-                  : "All spending");
+                : (lang === "ar" ? "?? ?????????" : "All spending");
               const statusText =
                 b.status === "over"
-                  ? (lang === "ar"
-                    ? "\u0627\u0646\u0647\u0627\u0631\u062f\u0647 \u0635\u0631\u0641\u062a \u0632\u064a\u0627\u062f\u0629"
-                    : "Over today")
+                  ? (lang === "ar" ? "??????? ???? ?????" : "You spent too much today")
                   : b.status === "tight"
-                    ? (lang === "ar"
-                      ? "\u0644\u0627\u0632\u0645 \u062a\u0647\u062f\u064a \u0627\u0644\u0635\u0631\u0641"
-                      : "Slow down")
+                    ? (lang === "ar" ? "???? ???? ?????" : "Slow down spending")
                     : b.status === "upcoming"
-                      ? (lang === "ar"
-                        ? "\u0644\u0633\u0647 \u0645\u0628\u062f\u0623\u062a\u0634"
-                        : "Not started")
-                      : (lang === "ar"
-                        ? "\u0644\u0633\u0647 \u0641\u064a \u0627\u0644\u0645\u0639\u062f\u0644"
-                        : "On track");
+                      ? (lang === "ar" ? "??? ??????" : "Not started")
+                      : (lang === "ar" ? "??? ?? ??????" : "On track");
               const statusClass =
                 b.status === "over"
                   ? "text-danger"
@@ -254,10 +522,7 @@ export function DashboardPage() {
                       <div className="text-[13px] font-bold truncate">
                         {name}
                       </div>
-                      <div className={
-                        "text-[11px] font-bold mt-0.5 " +
-                        statusClass
-                      }>
+                      <div className={"text-[11px] font-bold mt-0.5 " + statusClass}>
                         {statusText}
                       </div>
                     </div>
@@ -266,22 +531,22 @@ export function DashboardPage() {
                         {fmtMoney(b.remaining)}
                       </div>
                       <div className="text-[10px] text-muted">
-                        {lang === "ar" ? "\u0645\u062a\u0628\u0642\u064a" : "remaining"}
+                        {lang === "ar" ? "?????" : "remaining"}
                       </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mt-3">
                     <div>
                       <div className="text-[10px] text-muted">
-                        {lang === "ar" ? "\u0635\u0631\u0641 \u0627\u0644\u0646\u0647\u0627\u0631\u062f\u0647" : "Today"}
+                        {lang === "ar" ? "?????" : "Today"}
                       </div>
                       <div className="text-[12px] font-bold num">
-                        {fmtMoney(b.todaySpent)}
+                        {fmtMoney(b.spentToday)}
                       </div>
                     </div>
                     <div>
                       <div className="text-[10px] text-muted">
-                        {lang === "ar" ? "\u0627\u0644\u062d\u062f \u0627\u0644\u064a\u0648\u0645\u064a" : "Daily"}
+                        {lang === "ar" ? "???? ??????" : "Daily limit"}
                       </div>
                       <div className="text-[12px] font-bold num">
                         {fmtMoney(b.dailyLimit)}
@@ -289,12 +554,9 @@ export function DashboardPage() {
                     </div>
                     <div>
                       <div className="text-[10px] text-muted">
-                        {lang === "ar" ? "\u0627\u0644\u0645\u0639\u062f\u0644 \u0627\u0644\u062c\u062f\u064a\u062f" : "Adjusted"}
+                        {lang === "ar" ? "?????? ??????" : "New limit"}
                       </div>
-                      <div className={
-                        "text-[12px] font-extrabold num " +
-                        statusClass
-                      }>
+                      <div className={"text-[12px] font-extrabold num " + statusClass}>
                         {fmtMoney(b.adjustedDaily)}
                       </div>
                     </div>
@@ -302,11 +564,11 @@ export function DashboardPage() {
                   <div className="mt-2 text-[10.5px] text-muted leading-5">
                     {b.status === "over"
                       ? (lang === "ar"
-                        ? `\u0635\u0631\u0641\u0643 \u0627\u0644\u0646\u0647\u0627\u0631\u062f\u0647 \u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u062d\u062f. \u062d\u0627\u0648\u0644 \u062a\u0644\u062a\u0632\u0645 \u0628\u062d\u0648\u0627\u0644\u064a ${fmtMoney(b.adjustedDaily)} \u064a\u0648\u0645\u064a\u064b\u0627.`
-                        : `Today's spending is above the limit. Try to stay around ${fmtMoney(b.adjustedDaily)} per day.`)
+                          ? `??? ????? ???? ${fmtMoney(b.spentToday)} ????????. ??????? ???? ????? ??? ${b.daysLeft} ???.`
+                          : `You spent ${fmtMoney(b.spentToday)} today. The remaining amount must last ${b.daysLeft} days.`)
                       : (lang === "ar"
-                        ? `\u062e\u0644\u064a \u0628\u0627\u0644\u0643: \u062d\u0627\u0648\u0644 \u0645\u0627\u062a\u062a\u0639\u062f\u0627\u0634 ${fmtMoney(b.adjustedDaily)} \u0641\u064a \u0627\u0644\u064a\u0648\u0645 \u0639\u0634\u0627\u0646 \u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629 \u062a\u0643\u0645\u0644.`
-                        : `Try to stay under ${fmtMoney(b.adjustedDaily)} per day.`)}
+                          ? `??? ????: ???? ?? ?????? ${fmtMoney(b.adjustedDaily)} ?? ????? ???? ????????? ???? ??????.`
+                          : `Try to stay under ${fmtMoney(b.adjustedDaily)} per day to last the full period.`)}
                   </div>
                 </div>
               );
@@ -314,8 +576,7 @@ export function DashboardPage() {
           </div>
         </Card>
       )}
-
-      {/* Surplus ΓåÆ Goals */}
+      {/* Surplus → Goals */}
       {state.goals.length > 0 && surplus > 0 && (
         <Card className="p-4 overflow-hidden relative tilt-3d shine-sweep" data-tour="surplus">
           <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
@@ -441,7 +702,7 @@ export function DashboardPage() {
               </div>
               <div className="flex justify-between text-[13px]">
                 <span className="text-muted">{t('nw.liabilities')}</span>
-                <span className="font-bold num text-danger">ΓêÆ{fmtMoney(totals.liabilities)}</span>
+                <span className="font-bold num text-danger">−{fmtMoney(totals.liabilities)}</span>
               </div>
               <div className="pt-2.5 mt-1 border-t border-line flex justify-between items-baseline">
                 <span className="text-[13px] font-semibold">{t('nw.net')}</span>

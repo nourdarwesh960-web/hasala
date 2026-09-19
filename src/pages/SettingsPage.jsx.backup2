@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Btn, Field, Input } from '../components/ui';
 import { Icon } from '../components/Icon';
@@ -6,10 +6,10 @@ import { CURRENCIES } from '../lib/constants';
 import { demoState, blankState } from '../lib/demo';
 import { todayISO, csvEscape, download, resizeImage } from '../lib/utils';
 import { isTrackingEnabled, setTrackingEnabled } from '../lib/tracking';
-import { getSession, updateProfile } from '../lib/auth';
+import { getSession, logout, updateProfile } from '../lib/auth';
 import { loadFromCloud, syncToCloud, getSyncStatus } from '../lib/sync';
 import { Avatar } from '../components/Avatar';
-export function SettingsPage({ onLogout }) {
+export function SettingsPage() {
   const { state, update, setState, t, lang, setModal, showToast } = useApp();
   const [name, setName] = useState(state.profile.name || '');
   const [photo, setPhoto] = useState(state.profile.photo || null);
@@ -19,24 +19,24 @@ export function SettingsPage({ onLogout }) {
   const fileRef = useRef(null);
   useEffect(() => { setName(state.profile.name || ''); }, [state.profile.name]);
   const saveName = async () => {
-    const nextName = name.trim();
-    update((s) => ({
-      profile: {
-        ...s.profile,
-        name: nextName,
-      },
-    }));
-    const session = getSession();
-    if (session?.userId) {
-      const result = await updateProfile({
-        userId: session.userId,
-        name: nextName,
-      });
-      if (!result.ok) {
-        console.error('Failed to save profile name:', result);
-      }
+  const nextName = name.trim();
+  update((s) => ({
+    profile: {
+      ...s.profile,
+      name: nextName,
+    },
+  }));
+  const session = getSession();
+  if (session?.userId) {
+    const result = await updateProfile({
+      userId: session.userId,
+      name: nextName,
+    });
+    if (!result.ok) {
+      console.error('Failed to save profile name:', result);
     }
-  };
+  }
+};
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -59,7 +59,10 @@ export function SettingsPage({ onLogout }) {
           console.error('Failed to save profile photo:', result);
         }
       }
-      showToast(lang === 'ar' ? 'تم تحديث الصورة' : 'Photo updated', 'good');
+      showToast(
+        lang === 'ar' ? 'تم تحديث الصورة' : 'Photo updated',
+        'good'
+      );
     } catch (err) {
       console.error(err);
     }
@@ -67,11 +70,11 @@ export function SettingsPage({ onLogout }) {
   const removePhoto = () => {
     setPhoto(null);
     update((s) => ({ profile: { ...s.profile, photo: null } }));
-    showToast(lang === 'ar' ? 'اتشالت الصورة' : 'Photo removed');
+    showToast(lang === 'ar' ? 'Ø§ØªØ´Ø§Ù„Øª Ø§Ù„ØµÙˆØ±Ø©' : 'Photo removed');
   };
   const exportJSON = () => {
     download('hasala-backup-' + todayISO() + '.json', JSON.stringify(state, null, 2), 'application/json');
-    showToast(lang === 'ar' ? 'تم التصدير' : 'Exported', 'good');
+    showToast(lang === 'ar' ? 'ØªÙ… Ø§Ù„ØªØµØ¯ÙŠØ±' : 'Exported', 'good');
   };
   const exportCSV = () => {
     const headers = ['date', 'type', 'amount', 'category', 'account', 'to_account', 'note'];
@@ -83,7 +86,7 @@ export function SettingsPage({ onLogout }) {
       (x.note?.[lang] || ''),
     ].map(csvEscape).join(','));
     download('hasala-transactions-' + todayISO() + '.csv', [headers.join(','), ...rows].join('\n'), 'text/csv');
-    showToast(lang === 'ar' ? 'تم التصدير' : 'Exported', 'good');
+    showToast(lang === 'ar' ? 'ØªÙ… Ø§Ù„ØªØµØ¯ÙŠØ±' : 'Exported', 'good');
   };
   const importJSON = (e) => {
     const file = e.target.files?.[0];
@@ -95,9 +98,9 @@ export function SettingsPage({ onLogout }) {
         if (!data || typeof data !== 'object') throw new Error('bad');
         const base = blankState();
         setState({ ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) } });
-        showToast(lang === 'ar' ? 'تم الاستيراد' : 'Imported', 'good');
+        showToast(lang === 'ar' ? 'ØªÙ… Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯' : 'Imported', 'good');
       } catch {
-        showToast(lang === 'ar' ? 'الملف مش صالح' : 'Invalid file', 'bad');
+        showToast(lang === 'ar' ? 'Ø§Ù„Ù…Ù„Ù Ù…Ø´ ØµØ§Ù„Ø­' : 'Invalid file', 'bad');
       }
     };
     reader.readAsText(file);
@@ -106,13 +109,13 @@ export function SettingsPage({ onLogout }) {
   const loadDemo = () => {
     setModal({ type: 'confirm', payload: {
       title: t('set.demo'), message: t('set.demoWarn'), danger: false, confirmLabel: t('set.demo'),
-      onConfirm: () => { setState((s) => ({ ...demoState(), profile: { name: s.profile.name } })); showToast(lang === 'ar' ? 'تم' : 'Done', 'good'); },
+      onConfirm: () => { setState((s) => ({ ...demoState(), profile: { name: s.profile.name } })); showToast(lang === 'ar' ? 'ØªÙ…' : 'Done', 'good'); },
     }});
   };
   const resetAll = () => {
     setModal({ type: 'confirm', payload: {
       title: t('set.resetQ'), message: t('set.resetWarn'),
-      onConfirm: () => { setState(blankState()); showToast(lang === 'ar' ? 'تم المسح' : 'Cleared'); },
+      onConfirm: () => { setState(blankState()); showToast(lang === 'ar' ? 'ØªÙ… Ø§Ù„Ù…Ø³Ø­' : 'Cleared'); },
     }});
   };
   return (
@@ -135,7 +138,7 @@ export function SettingsPage({ onLogout }) {
             {photo && (
               <button onClick={removePhoto}
                 className="press text-[11px] text-muted hover:text-danger mt-1.5">
-                {lang === 'ar' ? 'شيل الصورة' : 'Remove photo'}
+                {lang === 'ar' ? 'Ø´ÙŠÙ„ Ø§Ù„ØµÙˆØ±Ø©' : 'Remove photo'}
               </button>
             )}
           </div>
@@ -145,7 +148,7 @@ export function SettingsPage({ onLogout }) {
         <div>
           <h2 className="text-[15px] font-bold mb-3">{t('set.language')}</h2>
           <div className="flex gap-2">
-            {[{ v: 'ar', label: 'العربية' }, { v: 'en', label: 'English' }].map((o) => (
+            {[{ v: 'ar', label: 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©' }, { v: 'en', label: 'English' }].map((o) => (
               <button key={o.v} onClick={() => update((s) => ({ settings: { ...s.settings, lang: o.v } }))}
                 className={'press flex-1 h-12 rounded-xl border text-[13.5px] font-bold transition ' +
                   (lang === o.v ? 'border-accent bg-accentSoft text-accent' : 'border-line text-muted hover:text-ink')}>
@@ -212,19 +215,10 @@ export function SettingsPage({ onLogout }) {
         <Btn variant="danger" onClick={resetAll}><Icon name="trash" size={15} /> {t('set.reset')}</Btn>
       </Card>
       <Card className="p-5">
-        <Btn
-          variant="secondary"
-          onClick={onLogout}
-          className="w-full justify-center text-danger border-danger/20 hover:border-danger/40"
-        >
-          <Icon name="logout" size={16} />
-          {lang === 'ar' ? '\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c' : 'Log out'}
-        </Btn>
-      </Card>
-      <Card className="p-5">
         <h2 className="text-[15px] font-bold mb-2">{t('set.about')}</h2>
         <p className="text-[13px] text-muted leading-relaxed">{t('set.aboutText')}</p>
       </Card>
     </div>
   );
 }
+
